@@ -74,13 +74,17 @@ for(i in dat_users[["user"]]){
   # add timestamp
   dat_tl[["timestamp"]] <- ts
 
+  # convert quotes and retweets
+  dat_tl[["is_retweet"]] <- ifelse(dat_tl[["is_retweet"]] == T,1,0)
+  dat_tl[["is_quote"]] <- ifelse(dat_tl[["is_quote"]] == T,1,0)
+
   # write to db
   dbWriteTable(
     con,
     "twitter_folketing_tl_raw",
     dat_tl,
-    overwrite = T,
-    append = F,
+    overwrite = F,
+    append = T,
     row.names = F
   )
 
@@ -112,7 +116,8 @@ dbWriteTable(
   "twitter_folketing_tl_clean",
   dat,
   overwrite = T,
-  append = F
+  append = F,
+  row.names = F
 )
 
 dbDisconnect(con)
