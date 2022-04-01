@@ -14,7 +14,7 @@ library(lubridate)
 con <- someR::con_sql()
 
 # get data
-res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_raw")
+res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_clean")
 dat <- dbFetch(res, n = -1)
 dbClearResult(res)
 
@@ -137,7 +137,6 @@ dat %>% dplyr::group_by(
 ) -> dat_t1000
 
 ### STATS NO LAST N TWEETS GIVEN TIME ###
-
 # current week
 cw <- lubridate::week(Sys.Date())
 cy <- lubridate::year(Sys.Date())
@@ -194,6 +193,18 @@ dat %>% dplyr::group_by(
 dat_t <- openxlsx::read.xlsx(
   "/home/kasper/someR/data/folketinget.xlsx"
 )
+
+# get twittern names
+dat %>% dplyr::distinct(
+  screen_name,name
+) -> twitter_names
+
+dat_t <- dplyr::left_join(
+  dat_t,
+  twitter_names[c("screen_name","name")],
+  c("user" = "screen_name")
+)
+
 dat_t <- dplyr::left_join(
   dat_t,
   dat_t10,
@@ -234,7 +245,7 @@ dat_t <- dplyr::left_join(
 dat_out <- reshape2::melt(
   dat_t,
   id.vars = c(
-    "user", "party", "blok"
+    "user", "name", "party", "blok"
   )
 )
 
@@ -242,7 +253,7 @@ dat_out <- reshape2::melt(
 dbWriteTable(
   con,
   "twitter_folketing_tl_stats",
-  dat_t,
+  dat_out,
   overwrite = T,
   append = F,
   row.names = F
