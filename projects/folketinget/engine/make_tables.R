@@ -9,6 +9,7 @@ con <- someR::con_sql()
 res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_stats")
 dat <- dbFetch(res, n = -1)
 dbClearResult(res)
+DBI::dbDisconnect(con)
 
 # need to join this in for later
 dat %>% dplyr::select(
@@ -73,7 +74,9 @@ table_curweek %>% dplyr::select(
   tweets_curweek,
   comments_curweek
 ) -> table_curweek
-
+table_curweek %>% dplyr::mutate(
+  table = "curweek"
+) -> table_curweek
 
 ### GOES INTO APP ###
 # define places
@@ -174,6 +177,9 @@ table_curmonth %>% dplyr::select(
   activity_curmonth,
   tweets_curmonth,
   comments_curmonth
+) -> table_curmonth
+table_curmonth %>% dplyr::mutate(
+  table = "curmonth"
 ) -> table_curmonth
 
 ### GOES INTO APP ###
@@ -276,6 +282,15 @@ table_curyear %>% dplyr::select(
   tweets_curyear,
   comments_curyear
 ) -> table_curyear
+table_curyear %>% dplyr::mutate(
+  table = "curyear"
+) -> table_curyear
+
+# out <- rbind(
+#   table_curweek,
+#   table_curmonth,
+#   table_curyear
+# ) -> out
 
 ### GOES INTO APP ###
 # define places
@@ -349,3 +364,11 @@ table_curyear %>% dplyr::select(
 #   )
 # )
 ### GOES INTO APP ###
+
+out <- list(
+  curweek = table_curweek,
+  curmonth = table_curmonth,
+  curyear = table_curyear
+)
+
+out$curmonth

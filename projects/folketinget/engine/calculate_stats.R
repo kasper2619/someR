@@ -193,6 +193,9 @@ dat %>% dplyr::group_by(
 dat_t <- openxlsx::read.xlsx(
   "/home/kasper/someR/data/folketinget.xlsx"
 )
+dat_t %>% dplyr::filter(
+  user != "sorenpind"
+) -> dat_t
 
 # get twittern names
 dat %>% dplyr::distinct(
@@ -249,7 +252,13 @@ dat_out <- reshape2::melt(
   )
 )
 
+write.csv(
+  dat_out,
+  "/home/kasper/someR/projects/folketinget/app/data/tables.csv", sep = ";", row.names = F
+)
+
 # write to db
+dbSendQuery(con, "SET GLOBAL local_infile = true;")
 dbWriteTable(
   con,
   "twitter_folketing_tl_stats",

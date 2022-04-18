@@ -7,7 +7,7 @@ library(dplyr)
 library(rtweet)
 
 # get token
-token <-someR::get_twitter_token()
+token <- someR::get_twitter_token()
 
 # user list
 dat_users <- openxlsx::read.xlsx(
@@ -18,7 +18,7 @@ dat_users <- openxlsx::read.xlsx(
 con <- someR::con_sql()
 
 # time started
-ts <- Sys.time() + (60*60)
+ts <- Sys.time() + (60*60*2)
 
 # get data
 for(i in dat_users[["user"]]){
@@ -79,6 +79,7 @@ for(i in dat_users[["user"]]){
   dat_tl[["is_quote"]] <- ifelse(dat_tl[["is_quote"]] == T,1,0)
 
   # write to db
+  dbSendQuery(con, "SET GLOBAL local_infile = true;")
   dbWriteTable(
     con,
     "twitter_folketing_tl_raw",
