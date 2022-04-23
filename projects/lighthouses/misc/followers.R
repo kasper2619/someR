@@ -9,19 +9,29 @@ library(rtweet)
 # get token
 token <- someR::get_twitter_token()
 
-# user list
-dat_users <- openxlsx::read.xlsx(
-  "/home/kasper/someR/data/folketinget.xlsx"
-)
+# # user list
+# dat_users <- openxlsx::read.xlsx(
+#   "/home/kasper/someR/data/lighthouses.xlsx"
+# )
 
-# make connection do db
+# make con
 con <- someR::con_sql()
+res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_master")
+dat_users <- dbFetch(res, n = -1)
+dbClearResult(res)
+
+dat_users <- reshape2::dcast(
+  dat_users,
+  formula = user_id + timestamp ~ variable,
+  value.var = "value",
+  fun.aggregate = toString
+)
 
 # time started
 ts <- Sys.time() + (60*60*2)
 
 # get data
-for(i in dat_users[["user"]]){
+for(i in dat_users[["screen_name"]]){
 
   print(i)
 
@@ -82,7 +92,7 @@ for(i in dat_users[["user"]]){
   dbSendQuery(con, "SET GLOBAL local_infile = true;")
   dbWriteTable(
     con,
-    "twitter_folketing_tl_raw",
+    "twitter_lighthouses_tl_raw",
     dat_tl,
     overwrite = F,
     append = T,
@@ -101,7 +111,7 @@ for(i in dat_users[["user"]]){
 }
 
 # make distinct
-res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_raw")
+res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_tl_raw")
 dat <- dbFetch(res, n =-1)
 dbClearResult(res)
 
@@ -122,7 +132,7 @@ dat %>% dplyr::distinct(
 dbSendQuery(con, "SET GLOBAL local_infile = true;")
 dbWriteTable(
   con,
-  "twitter_folketing_tl_raw",
+  "twitter_lighthouses_tl_raw",
   dat,
   overwrite = T,
   append = F,
@@ -132,7 +142,7 @@ dbWriteTable(
 # write to db
 dbWriteTable(
   con,
-  "twitter_folketing_tl_clean",
+  "twitter_lighthouses_tl_clean",
   dat,
   overwrite = T,
   append = F,

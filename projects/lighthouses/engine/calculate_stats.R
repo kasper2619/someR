@@ -14,7 +14,7 @@ library(lubridate)
 con <- someR::con_sql()
 
 # get data
-res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_clean")
+res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_tl_clean")
 dat <- dbFetch(res, n = -1)
 dbClearResult(res)
 
@@ -192,7 +192,7 @@ dat %>% dplyr::group_by(
 # )
 
 # get master data
-res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_master")
+res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_master")
 dat_t <- dbFetch(res, n = -1)
 dbClearResult(res)
 
@@ -212,8 +212,6 @@ dat_t <- reshape2::dcast(
 dat_t %>% dplyr::select(
   screen_name,
   name,
-  party,
-  blok,
   profile_image_url
 ) -> dat_t
 
@@ -288,7 +286,7 @@ dat_t <- dplyr::left_join(
 dat_out <- reshape2::melt(
   dat_t,
   id.vars = c(
-    "screen_name", "name", "party", "blok","profile_image_url"
+    "screen_name", "name","profile_image_url"
   )
 )
 
@@ -296,7 +294,7 @@ dat_out <- reshape2::melt(
 dbSendQuery(con, "SET GLOBAL local_infile = true;")
 dbWriteTable(
   con,
-  "twitter_folketing_tl_stats",
+  "twitter_lighthouses_tl_stats",
   dat_out,
   overwrite = T,
   append = F,

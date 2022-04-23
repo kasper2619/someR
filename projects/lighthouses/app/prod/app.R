@@ -33,7 +33,7 @@ ui <- # Define UI for application that draws a histogram
       # current week
       fluidRow(
         column(width = 12,
-               box(title = "Twitter Performance for Folketingsmedlemmer", width = 12, height = 54, icon = NULL, background = "black"
+               box(title = "Twitter Performance for Lighthouses", width = 12, height = 54, icon = NULL, background = "black"
                ),
                box(title = "Performance: Uge", width = 12, icon = NULL, collapsible = T,
                    reactableOutput("curweek_table")
@@ -57,7 +57,7 @@ server <- shinyServer(function(input, output, session) {
 
     # load data
     con <- someR::con_sql()
-    res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_tl_stats")
+    res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_tl_stats")
     dat <- dbFetch(res, n = -1)
     dbClearResult(res)
     DBI::dbDisconnect(con)
@@ -70,7 +70,7 @@ server <- shinyServer(function(input, output, session) {
 
     # load data
     con <- someR::con_sql()
-    res <- dbSendQuery(con, "SELECT max(timestamp) FROM twitter_folketing_tl_clean")
+    res <- dbSendQuery(con, "SELECT max(timestamp) FROM twitter_lighthouses_tl_clean")
     dat <- dbFetch(res, n = -1)
     dbClearResult(res)
     DBI::dbDisconnect(con)
@@ -107,12 +107,12 @@ server <- shinyServer(function(input, output, session) {
     )
     write.table(
       log,
-      "/home/kasper/someR/projects/folketinget/logs/visitors.csv", row.names = F, append = T, col.names = F
+      "/home/kasper/someR/projects/lighthouses/logs/visitors.csv", row.names = F, append = T, col.names = F
     )
 
     # need to join this in for later
     dat() %>% dplyr::select(
-      screen_name,name,party,profile_image_url
+      screen_name,name,profile_image_url
     ) %>% distinct(
       screen_name,
       .keep_all = T
@@ -178,7 +178,6 @@ server <- shinyServer(function(input, output, session) {
     table_curweek %>% dplyr::select(
       profile_image_url,
       name,
-      party,
       followers_count,
       friends_count,
       placering,
@@ -215,7 +214,6 @@ server <- shinyServer(function(input, output, session) {
     table_curmonth %>% dplyr::select(
       profile_image_url,
       name,
-      party,
       followers_count,
       friends_count,
       placering,
@@ -252,7 +250,6 @@ server <- shinyServer(function(input, output, session) {
     table_curyear %>% dplyr::select(
       profile_image_url,
       name,
-      party,
       followers_count,
       friends_count,
       placering,
@@ -303,16 +300,11 @@ server <- shinyServer(function(input, output, session) {
           html = TRUE
         ),
         name = colDef(
-          name = "Politiker",
+          name = "Lighthouse",
           align = "left",
-          minWidth = 180,
+          minWidth = 240,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party = colDef(
-          name = "Parti",
-          align = "center",
-          minWidth = 90
         ),
         followers_count = colDef(
           name = "Følgere",
@@ -396,7 +388,6 @@ server <- shinyServer(function(input, output, session) {
         #header = function(value) gsub("//.", "_", value, fixed = TRUE),
         #cell = function(value) format(value, nsmall = 1),
         align = "center",
-
         minWidth = 120
       ),
       columns = list(
@@ -407,16 +398,11 @@ server <- shinyServer(function(input, output, session) {
           cell = embed_img()
         ),
         name = colDef(
-          name = "Politiker",
+          name = "Lighthouse",
           align = "left",
-          minWidth = 180,
+          minWidth = 240,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party = colDef(
-          name = "Parti",
-          align = "center",
-          minWidth = 90
         ),
         followers_count = colDef(
           name = "Følgere",
@@ -511,20 +497,11 @@ server <- shinyServer(function(input, output, session) {
           cell = embed_img()
         ),
         name = colDef(
-          name = "Politiker",
+          name = "Lighthouse",
           align = "left",
-          minWidth = 180,
+          minWidth = 240,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party = colDef(
-          name = "Parti",
-          align = "center",
-          minWidth = 90,
-          cell = function(value) {
-            # Render as an X mark or check mark
-            if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
-          }
         ),
         followers_count = colDef(
           name = "Følgere",
