@@ -2,7 +2,7 @@
 % Please edit documentation in R/backend.R
 \name{get_twitter_token}
 \alias{get_twitter_token}
-\title{Make Connection to SQL DB}
+\title{Make connection to Twitter (Deprecated)}
 \usage{
 get_twitter_token()
 }
@@ -10,5 +10,5 @@ get_twitter_token()
 A connection to local db
 }
 \description{
-Make Connection to SQL DB
+Make connection to Twitter (Deprecated)
 }

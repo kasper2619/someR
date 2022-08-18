@@ -187,10 +187,6 @@ dat %>% dplyr::group_by(
 ) -> dat_curyear
 
 ### JOIN ###
-# dat_t <- openxlsx::read.xlsx(
-#   "/home/kasper/someR/data/folketinget.xlsx"
-# )
-
 # get master data
 res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_master")
 dat_t <- dbFetch(res, n = -1)
@@ -213,20 +209,8 @@ dat_t %>% dplyr::select(
   screen_name,
   name,
   party,
-  blok,
   profile_image_url
 ) -> dat_t
-
-# get twittern names
-# dat %>% dplyr::distinct(
-#   screen_name,name
-# ) -> twitter_names
-
-# dat_t <- dplyr::left_join(
-#   dat_t,
-#   twitter_names[c("screen_name","name")],
-#   c("user" = "screen_name")
-# )
 
 dat_t <- dplyr::left_join(
   dat_t,
@@ -288,9 +272,14 @@ dat_t <- dplyr::left_join(
 dat_out <- reshape2::melt(
   dat_t,
   id.vars = c(
-    "screen_name", "name", "party", "blok","profile_image_url"
+    "screen_name", "name","party","profile_image_url"
   )
 )
+
+#write.csv(
+#  dat_out,
+#  "/home/kasper/someR/projects/folketinget/app/data/tables.csv", sep = ";", row.names = F
+#)
 
 # write to db
 dbSendQuery(con, "SET GLOBAL local_infile = true;")

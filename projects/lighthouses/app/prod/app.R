@@ -13,13 +13,15 @@ library(shinydashboard)
 library(reactable)
 library(reactablefmtr)
 library(dplyr)
+library(shiny)
 
 # Define UI for application that draws a histogram
 ui <- # Define UI for application that draws a histogram
-  dashboardPage(skin = "black",
+
+  dashboardPage(skin = "black",title="#lighthouselisten",
 
     ### HEADER ###
-    dbHeader <- dashboardHeader(disable = F, dropdownMenuOutput("ddmenu")),
+    dbHeader <- dashboardHeader(disable = F, title = "#lighthouselisten", dropdownMenuOutput("ddmenu")),
 
     ### SIDEBAR ###
     dashboardSidebar(disable = T, collapsed = T),
@@ -32,22 +34,40 @@ ui <- # Define UI for application that draws a histogram
 
       # current week
       fluidRow(
-        column(width = 12,
-               box(title = "Twitter Performance for Lighthouses", width = 12, height = 54, icon = NULL, background = "black"
-               ),
-               box(title = "Performance: Uge", width = 12, icon = NULL, collapsible = T,
-                   reactableOutput("curweek_table")
-               ),
-               box(title = "Performance: Måned", width = 12, icon = NULL, collapsible = T,
-                   reactableOutput("curmonth_table")
-               ),
-               box(title = "Performance: År", width = 12, icon = NULL, collapsible = T,
-                   reactableOutput("curyear_table")
-               )
+        column(
+          width = 12,
+            box(title = "Scoreboard", width = 12, collapsible = T,solidHeader = T,
+              tabsetPanel(type = "pills",
+                tabPanel(
+                  "Denne Uge",
+                  reactableOutput("curweek_table")
+                ),
+                tabPanel(
+                  "Sidste Uge",
+                  reactableOutput("lastweek_table")
+                ),
+                tabPanel(
+                  "Denne Måned",
+                  reactableOutput("curmonth_table")
+                ),
+                tabPanel(
+                  "Sidste Måned",
+                  reactableOutput("lastmonth_table")
+                ),
+                tabPanel(
+                  "Dette År",
+                  reactableOutput("curyear_table")
+                ),
+                tabPanel(
+                  "Sidste År",
+                  reactableOutput("lastyear_table")
+                )
+              )
+            )
+          )
         )
       )
     )
-  )
 
 # Define server logic required to draw a histogram
 server <- shinyServer(function(input, output, session) {
@@ -87,7 +107,7 @@ server <- shinyServer(function(input, output, session) {
       type = "notifications",
       messageItem(
         from = "Brug for hjælp?",
-        message = "Skriv til @RansHosling på Twitter",
+        message = "Skriv til @Fast4Ward_ på Twitter",
         icon = icon("life-ring"),
       ),
       notificationItem(
@@ -125,47 +145,72 @@ server <- shinyServer(function(input, output, session) {
         "tweets_curweek",
         "comments_curweek",
         "retweets_curweek",
-        "quotes_curweek",
         "likes_curweek",
         "likes_mean_curweek",
+        "commentsprtweet_curweek",
+
         "activity_curmonth",
         "tweets_curmonth",
         "comments_curmonth",
         "retweets_curmonth",
-        "quotes_curmonth",
         "likes_curmonth",
         "likes_mean_curmonth",
+        "commentsprtweet_curmonth",
+
         "activity_curyear",
         "tweets_curyear",
         "comments_curyear",
         "retweets_curyear",
-        "quotes_curyear",
         "likes_curyear",
         "likes_mean_curyear",
-        "followers_count",
-        "friends_count"
-      )
-    ) -> table_currentx
+        "commentsprtweet_curyear",
 
-    table_currentx <- reshape2::dcast(
-      table_currentx,
+        "activity_lastweek",
+        "tweets_lastweek",
+        "comments_lastweek",
+        "retweets_lastweek",
+        "likes_lastweek",
+        "likes_mean_lastweek",
+        "commentsprtweet_lastweek",
+
+        "activity_lastmonth",
+        "tweets_lastmonth",
+        "comments_lastmonth",
+        "retweets_lastmonth",
+        "likes_lastmonth",
+        "likes_mean_lastmonth",
+        "commentsprtweet_lastmonth",
+
+        "activity_lastyear",
+        "tweets_lastyear",
+        "comments_lastyear",
+        "retweets_lastyear",
+        "likes_lastyear",
+        "likes_mean_lastyear",
+        "commentsprtweet_lastyear",
+
+        "followers_count"
+      )
+    ) -> table_scoreboard
+
+    table_scoreboard <- reshape2::dcast(
+      table_scoreboard,
       "screen_name ~ variable",
       value.var = "value",
       fun.aggregate = sum
     )
 
     ### CURRENT WEEK ###
-    table_currentx %>% dplyr::select(
+    table_scoreboard %>% dplyr::select(
       screen_name,
       followers_count,
-      friends_count,
       activity_curweek,
       tweets_curweek,
       comments_curweek,
       retweets_curweek,
-      quotes_curweek,
       likes_curweek,
-      likes_mean_curweek
+      likes_mean_curweek,
+      commentsprtweet_curweek
     ) %>% dplyr::arrange(
       desc(likes_curweek)
     ) -> table_curweek
@@ -179,29 +224,65 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_count,
-      friends_count,
+
       placering,
       likes_curweek,
       likes_mean_curweek,
+      commentsprtweet_curweek,
       activity_curweek,
       tweets_curweek,
       comments_curweek,
-      retweets_curweek,
-      quotes_curweek
+      retweets_curweek
     ) -> table_curweek
 
-    ### CURRENT MONTH ###
-    table_currentx %>% dplyr::select(
+    ### LAST WEEK ###
+    table_scoreboard %>% dplyr::select(
       screen_name,
       followers_count,
-      friends_count,
+
+      activity_lastweek,
+      tweets_lastweek,
+      comments_lastweek,
+      retweets_lastweek,
+      likes_lastweek,
+      likes_mean_lastweek,
+      commentsprtweet_lastweek
+    ) %>% dplyr::arrange(
+      desc(likes_lastweek)
+    ) -> table_lastweek
+    table_lastweek[["likes_mean_lastweek"]] <- round(table_lastweek[["likes_mean_lastweek"]],2)
+    table_lastweek[["placering"]] <- 1:nrow(table_lastweek)
+
+    table_lastweek <- dplyr::left_join(
+      table_lastweek,dat_master, by = c("screen_name"="screen_name")
+    )
+    table_lastweek %>% dplyr::select(
+      profile_image_url,
+      name,
+      followers_count,
+
+      placering,
+      likes_lastweek,
+      likes_mean_lastweek,
+      commentsprtweet_lastweek,
+      activity_lastweek,
+      tweets_lastweek,
+      comments_lastweek,
+      retweets_lastweek
+    ) -> table_lastweek
+
+    ### CURRENT MONTH ###
+    table_scoreboard %>% dplyr::select(
+      screen_name,
+      followers_count,
+
       activity_curmonth,
       tweets_curmonth,
       comments_curmonth,
       retweets_curmonth,
-      quotes_curmonth,
       likes_curmonth,
-      likes_mean_curmonth
+      likes_mean_curmonth,
+      commentsprtweet_curmonth
     ) %>% dplyr::arrange(
       desc(likes_curmonth)
     ) -> table_curmonth
@@ -215,29 +296,65 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_count,
-      friends_count,
+
       placering,
       likes_curmonth,
       likes_mean_curmonth,
+      commentsprtweet_curmonth,
       activity_curmonth,
       tweets_curmonth,
       comments_curmonth,
-      retweets_curmonth,
-      quotes_curmonth
+      retweets_curmonth
     ) -> table_curmonth
 
-    ### CURRENT YEAR ###
-    table_currentx %>% dplyr::select(
+    ### CURRENT LASTMONTH ###
+    table_scoreboard %>% dplyr::select(
       screen_name,
       followers_count,
-      friends_count,
+
+      activity_lastmonth,
+      tweets_lastmonth,
+      comments_lastmonth,
+      retweets_lastmonth,
+      likes_lastmonth,
+      likes_mean_lastmonth,
+      commentsprtweet_lastmonth
+    ) %>% dplyr::arrange(
+      desc(likes_lastmonth)
+    ) -> table_lastmonth
+    table_lastmonth[["likes_mean_lastmonth"]] <- round(table_lastmonth[["likes_mean_lastmonth"]],2)
+    table_lastmonth[["placering"]] <- 1:nrow(table_lastmonth)
+
+    table_lastmonth <- dplyr::left_join(
+      table_lastmonth,dat_master, by = c("screen_name"="screen_name")
+    )
+    table_lastmonth %>% dplyr::select(
+      profile_image_url,
+      name,
+      followers_count,
+
+      placering,
+      likes_lastmonth,
+      likes_mean_lastmonth,
+      commentsprtweet_lastmonth,
+      activity_lastmonth,
+      tweets_lastmonth,
+      comments_lastmonth,
+      retweets_lastmonth
+    ) -> table_lastmonth
+
+    ### CURRENT YEAR ###
+    table_scoreboard %>% dplyr::select(
+      screen_name,
+      followers_count,
+
       activity_curyear,
       tweets_curyear,
       comments_curyear,
       retweets_curyear,
-      quotes_curyear,
       likes_curyear,
-      likes_mean_curyear
+      likes_mean_curyear,
+      commentsprtweet_curyear
     ) %>% dplyr::arrange(
       desc(likes_curyear)
     ) -> table_curyear
@@ -251,22 +368,60 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_count,
-      friends_count,
+
       placering,
       likes_curyear,
       likes_mean_curyear,
+      commentsprtweet_curyear,
       activity_curyear,
       tweets_curyear,
       comments_curyear,
-      retweets_curyear,
-      quotes_curyear
+      retweets_curyear
     ) -> table_curyear
+
+    ### LAST YEAR ###
+    table_scoreboard %>% dplyr::select(
+      screen_name,
+      followers_count,
+
+      activity_lastyear,
+      tweets_lastyear,
+      comments_lastyear,
+      retweets_lastyear,
+      likes_lastyear,
+      likes_mean_lastyear,
+      commentsprtweet_lastyear
+    ) %>% dplyr::arrange(
+      desc(likes_lastyear)
+    ) -> table_lastyear
+    table_lastyear[["likes_mean_lastyear"]] <- round(table_lastyear[["likes_mean_lastyear"]],2)
+    table_lastyear[["placering"]] <- 1:nrow(table_lastyear)
+
+    table_lastyear <- dplyr::left_join(
+      table_lastyear,dat_master, by = c("screen_name"="screen_name")
+    )
+    table_lastyear %>% dplyr::select(
+      profile_image_url,
+      name,
+      followers_count,
+      placering,
+      likes_lastyear,
+      likes_mean_lastyear,
+      commentsprtweet_lastyear,
+      activity_lastyear,
+      tweets_lastyear,
+      comments_lastyear,
+      retweets_lastyear
+    ) -> table_lastyear
 
     # put into list
     out <- list(
       curweek = table_curweek,
+      lastweek = table_lastweek,
       curmonth = table_curmonth,
-      curyear = table_curyear
+      lastmonth = table_lastmonth,
+      curyear = table_curyear,
+      lastyear = table_lastyear
     )
 
     return(out)
@@ -300,73 +455,170 @@ server <- shinyServer(function(input, output, session) {
           html = TRUE
         ),
         name = colDef(
-          name = "Lighthouse",
+          name = paste(emo::ji("star"),"Navn", sep = " "),
           align = "left",
-          minWidth = 240,
+          minWidth = 150,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
         ),
         followers_count = colDef(
-          name = "Følgere",
-          align = "center",
-          minWidth = 90
-        ),
-        friends_count = colDef(
-          name = "Venner",
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
           align = "center",
           minWidth = 90
         ),
         placering = colDef(
-          name = "Placering",
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
           align = "center",
-          minWidth = 90,
+          minWidth = 120,
           cell = function(value) {
             # Render as an X mark or check mark
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
         likes_curweek = colDef(
-          name = "Likes I Alt",
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         ),
         likes_mean_curweek = colDef(
-          name = "Likes Gns.",
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_curweek = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         ),
         activity_curweek = colDef(
-          name = "Aktivitet",
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         ),
         tweets_curweek = colDef(
-          name = "Tweets",
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         ),
         comments_curweek = colDef(
-          name = "Kommentarer",
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         ),
         retweets_curweek = colDef(
-          name = "Retweets",
-          align = "center",
-          minWidth = 120,
-          style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
-        ),
-        quotes_curweek = colDef(
-          name = "Quotes",
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curweek"]], font_color = "black", highlighter = "#ECECEC")
         )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_curweek", "likes_mean_curweek","commentsprtweet_curweek"))
+      )
+    )
+
+  })
+
+  ### LAST WEEK TABLE ###
+  output$lastweek_table <- renderReactable({
+
+    reactable(
+      theme = fivethirtyeight(),
+      dat_tables()[["lastweek"]],
+      resizable = TRUE,
+      sortable = TRUE,
+      filterable = TRUE,
+      searchable = TRUE,
+      pagination = TRUE,
+      fullWidth = TRUE,
+      defaultColDef = colDef(
+        #header = function(value) gsub("_", "_", value, fixed = TRUE),
+        #cell = function(value) format(value, nsmall = 1),
+        align = "center",
+        minWidth = 120
+      ),
+      columns = list(
+        profile_image_url = colDef(
+          name = "",
+          minWidth = 40,
+          filterable = F,
+          cell = embed_img(),
+          html = TRUE
+        ),
+        name = colDef(
+          name = paste(emo::ji("star"),"Navn", sep = " "),
+          align = "left",
+          minWidth = 150,
+          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
+          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
+        ),
+        followers_count = colDef(
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
+          align = "center",
+          minWidth = 90
+        ),
+        placering = colDef(
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
+          align = "center",
+          minWidth = 120,
+          cell = function(value) {
+            # Render as an X mark or check mark
+            if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
+          }
+        ),
+        likes_lastweek = colDef(
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        likes_mean_lastweek = colDef(
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_lastweek = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        activity_lastweek = colDef(
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        tweets_lastweek = colDef(
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        comments_lastweek = colDef(
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        retweets_lastweek = colDef(
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastweek"]], font_color = "black", highlighter = "#ECECEC")
+        )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_lastweek", "likes_mean_lastweek","commentsprtweet_lastweek"))
       )
     )
 
@@ -385,7 +637,7 @@ server <- shinyServer(function(input, output, session) {
       pagination = TRUE,
       fullWidth = TRUE,
       defaultColDef = colDef(
-        #header = function(value) gsub("//.", "_", value, fixed = TRUE),
+        #header = function(value) gsub("_", "_", value, fixed = TRUE),
         #cell = function(value) format(value, nsmall = 1),
         align = "center",
         minWidth = 120
@@ -395,79 +647,177 @@ server <- shinyServer(function(input, output, session) {
           name = "",
           minWidth = 40,
           filterable = F,
-          cell = embed_img()
+          cell = embed_img(),
+          html = TRUE
         ),
         name = colDef(
-          name = "Lighthouse",
+          name = paste(emo::ji("star"),"Navn", sep = " "),
           align = "left",
-          minWidth = 240,
+          minWidth = 150,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
         ),
         followers_count = colDef(
-          name = "Følgere",
-          align = "center",
-          minWidth = 90
-        ),
-        friends_count = colDef(
-          name = "Venner",
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
           align = "center",
           minWidth = 90
         ),
         placering = colDef(
-          name = "Placering",
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
           align = "center",
-          minWidth = 90,
+          minWidth = 120,
           cell = function(value) {
             # Render as an X mark or check mark
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
         likes_curmonth = colDef(
-          name = "Likes I Alt",
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         ),
         likes_mean_curmonth = colDef(
-          name = "Likes Gns.",
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_curmonth = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         ),
         activity_curmonth = colDef(
-          name = "Aktivitet",
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         ),
         tweets_curmonth = colDef(
-          name = "Tweets",
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         ),
         comments_curmonth = colDef(
-          name = "Kommentarer",
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         ),
         retweets_curmonth = colDef(
-          name = "Retweets",
-          align = "center",
-          minWidth = 120,
-          style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
-        ),
-        quotes_curmonth = colDef(
-          name = "Quotes",
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curmonth"]], font_color = "black", highlighter = "#ECECEC")
         )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_curmonth", "likes_mean_curmonth","commentsprtweet_curmonth"))
       )
     )
 
+
+  })
+
+  ### LAST MONTH TABLE ###
+  output$lastmonth_table <- renderReactable({
+
+    reactable(
+      theme = fivethirtyeight(),
+      dat_tables()[["lastmonth"]],
+      resizable = TRUE,
+      sortable = TRUE,
+      filterable = TRUE,
+      searchable = TRUE,
+      pagination = TRUE,
+      fullWidth = TRUE,
+      defaultColDef = colDef(
+        #header = function(value) gsub("_", "_", value, fixed = TRUE),
+        #cell = function(value) format(value, nsmall = 1),
+        align = "center",
+        minWidth = 120
+      ),
+      columns = list(
+        profile_image_url = colDef(
+          name = "",
+          minWidth = 40,
+          filterable = F,
+          cell = embed_img(),
+          html = TRUE
+        ),
+        name = colDef(
+          name = paste(emo::ji("star"),"Navn", sep = " "),
+          align = "left",
+          minWidth = 150,
+          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
+          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
+        ),
+        followers_count = colDef(
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
+          align = "center",
+          minWidth = 90
+        ),
+        placering = colDef(
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
+          align = "center",
+          minWidth = 120,
+          cell = function(value) {
+            # Render as an X mark or check mark
+            if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
+          }
+        ),
+        likes_lastmonth = colDef(
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        likes_mean_lastmonth = colDef(
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_lastmonth = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        activity_lastmonth = colDef(
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        tweets_lastmonth = colDef(
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        comments_lastmonth = colDef(
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        retweets_lastmonth = colDef(
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastmonth"]], font_color = "black", highlighter = "#ECECEC")
+        )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_lastmonth", "likes_mean_lastmonth","commentsprtweet_lastmonth"))
+      )
+    )
   })
 
   ### CURRENT YEAR TABLE ###
@@ -486,7 +836,6 @@ server <- shinyServer(function(input, output, session) {
         #header = function(value) gsub("_", "_", value, fixed = TRUE),
         #cell = function(value) format(value, nsmall = 1),
         align = "center",
-
         minWidth = 120
       ),
       columns = list(
@@ -494,76 +843,173 @@ server <- shinyServer(function(input, output, session) {
           name = "",
           minWidth = 40,
           filterable = F,
-          cell = embed_img()
+          cell = embed_img(),
+          html = TRUE
         ),
         name = colDef(
-          name = "Lighthouse",
+          name = paste(emo::ji("star"),"Navn", sep = " "),
           align = "left",
-          minWidth = 240,
+          minWidth = 150,
           style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
           headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
         ),
         followers_count = colDef(
-          name = "Følgere",
-          align = "center",
-          minWidth = 90
-        ),
-        friends_count = colDef(
-          name = "Venner",
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
           align = "center",
           minWidth = 90
         ),
         placering = colDef(
-          name = "Placering",
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
           align = "center",
-          minWidth = 90,
+          minWidth = 120,
           cell = function(value) {
             # Render as an X mark or check mark
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
         likes_curyear = colDef(
-          name = "Likes I Alt",
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         ),
         likes_mean_curyear = colDef(
-          name = "Likes Gns.",
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_curyear = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         ),
         activity_curyear = colDef(
-          name = "Aktivitet",
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         ),
         tweets_curyear = colDef(
-          name = "Tweets",
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         ),
         comments_curyear = colDef(
-          name = "Kommentarer",
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         ),
         retweets_curyear = colDef(
-          name = "Retweets",
-          align = "center",
-          minWidth = 120,
-          style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
-        ),
-        quotes_curyear = colDef(
-          name = "quotes",
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
           align = "center",
           minWidth = 120,
           style = highlight_max(dat_tables()[["curyear"]], font_color = "black", highlighter = "#ECECEC")
         )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_curyear", "likes_mean_curyear","commentsprtweet_curyear"))
+      )
+    )
+  })
+
+  ### LAST YEAR TABLE ###
+  output$lastyear_table <- renderReactable({
+
+    reactable(
+      theme = fivethirtyeight(),
+      dat_tables()[["lastyear"]],
+      resizable = TRUE,
+      sortable = TRUE,
+      filterable = TRUE,
+      searchable = TRUE,
+      pagination = TRUE,
+      fullWidth = TRUE,
+      defaultColDef = colDef(
+        #header = function(value) gsub("_", "_", value, fixed = TRUE),
+        #cell = function(value) format(value, nsmall = 1),
+        align = "center",
+        minWidth = 120
+      ),
+      columns = list(
+        profile_image_url = colDef(
+          name = "",
+          minWidth = 40,
+          filterable = F,
+          cell = embed_img(),
+          html = TRUE
+        ),
+        name = colDef(
+          name = paste(emo::ji("star"),"Navn", sep = " "),
+          align = "left",
+          minWidth = 150,
+          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
+          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
+        ),
+        followers_count = colDef(
+          name = paste(emo::ji("man"),emo::ji("woman"),"Følgere", sep = " "),
+          align = "center",
+          minWidth = 90
+        ),
+        placering = colDef(
+          name = paste(emo::ji("trophy"),"Placering", sep = " "),
+          align = "center",
+          minWidth = 120,
+          cell = function(value) {
+            # Render as an X mark or check mark
+            if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
+          }
+        ),
+        likes_lastyear = colDef(
+          name = paste(emo::ji("heart"),"Likes", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        likes_mean_lastyear = colDef(
+          name = paste(emo::ji("fist_right"),"Impact", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        commentsprtweet_lastyear = colDef(
+          name = paste(emo::ji("handshake"),"Engagement", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        activity_lastyear = colDef(
+          name = paste(emo::ji("runner"),"Aktivitet", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        tweets_lastyear = colDef(
+          name = paste(emo::ji("bird"),"Tweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        comments_lastyear = colDef(
+          name = paste(emo::ji("left_speech_bubble"),"Kommentarer", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        ),
+        retweets_lastyear = colDef(
+          name = paste(emo::ji("exclamation"),"Retweets", sep = " "),
+          align = "center",
+          minWidth = 120,
+          style = highlight_max(dat_tables()[["lastyear"]], font_color = "black", highlighter = "#ECECEC")
+        )
+      ),
+      columnGroups = list(
+        colGroup(name = "Lighthouse", columns = c("name", "profile_image_url", "followers_count")),
+        colGroup(name = "Scoreboard", columns = c("placering", "likes_lastyear", "likes_mean_lastyear","commentsprtweet_lastyear"))
       )
     )
   })

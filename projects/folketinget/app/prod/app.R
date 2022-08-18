@@ -10,6 +10,7 @@
 library(someR)
 library(shiny)
 library(shinydashboard)
+library(shinyalert)
 library(reactable)
 library(reactablefmtr)
 library(dplyr)
@@ -52,6 +53,26 @@ ui <- # Define UI for application that draws a histogram
 # Define server logic required to draw a histogram
 server <- shinyServer(function(input, output, session) {
 
+  ### WELCOME MESSAGE ###
+  # shinyalert(
+  #   title = "Velkommen til Fast Forward's Twitter Dashboard for Folketinget!",
+  #   text = "Her følger vi vores folketingsmedlemmers aktivitet på Twitter\n Formålet er at hjælpe vores folketingsmedlemmer med at forstå hvordan de bliver bedre i dialogen på Twitter og gøre det transparent hvordan de klarer sig på Twitter\n Spørgsmål kan rettes til @RansHosling / Fast Forward på Twitter.",
+  #   size = "m",
+  #   closeOnEsc = TRUE,
+  #   closeOnClickOutside = TRUE,
+  #   html = FALSE,
+  #   type = "",
+  #   showConfirmButton = TRUE,
+  #   showCancelButton = FALSE,
+  #   confirmButtonText = "Forstået!",
+  #   confirmButtonCol = "#000000",
+  #   timer = 0,
+  #   imageUrl = base64enc::dataURI(file = "www/Fast Forward Logo.png", mime = "image/png"),
+  #   imageWidth = 200,
+  #   imageHeight = 200,
+  #   animation = TRUE
+  # )
+
   ### DATA ###
   dat <- reactive({
 
@@ -87,7 +108,7 @@ server <- shinyServer(function(input, output, session) {
       type = "notifications",
       messageItem(
         from = "Brug for hjælp?",
-        message = "Skriv til @RansHosling på Twitter",
+        message = "Skriv til @Fast4Ward_ på Twitter",
         icon = icon("life-ring"),
       ),
       notificationItem(

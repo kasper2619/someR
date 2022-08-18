@@ -9,19 +9,29 @@ library(rtweet)
 # get token
 token <- someR::get_twitter_token()
 
-# user list
-dat_users <- openxlsx::read.xlsx(
-  "/home/kasper/someR/data/folketinget.xlsx"
-)
-
-# make connection do db
+# make con
 con <- someR::con_sql()
+res <- dbSendQuery(con, "SELECT * FROM twitter_folketing_master")
+dat_users <- dbFetch(res, n = -1)
+dbClearResult(res)
+
+dat_users %>% dplyr::filter(
+  timestamp == max(timestamp)
+) %>% dplyr::select(
+  -timestamp
+) -> dat_users
+
+dat_users <- reshape2::dcast(
+  dat_users,
+  formula = user_id ~ variable,
+  value.var = "value"
+)
 
 # time started
 ts <- Sys.time() + (60*60*2)
 
 # get data
-for(i in dat_users[["user"]]){
+for(i in dat_users[["screen_name"]]){
 
   print(i)
 

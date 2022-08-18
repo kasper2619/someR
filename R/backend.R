@@ -19,20 +19,20 @@ con_sql <- function(){
   return(con)
 }
 
-#' Make Connection to SQL DB
+#' Make connection to Twitter (Deprecated)
 #'
 #' @return A connection to local db
 #' @export
 get_twitter_token <- function(){
 
   # libs
-  library(rtweet )
+  library(rtweet)
 
   # credentials
-  api_key <- "FtRtGtENd6Zxc9SDbXbG6z7wp"
-  api_secret_key <- "OirXTuYuAsCXAbtzYNJ1NZG6KW8jdVek6iebaMqH9fZgsiOLuT"
-  at <- "1330014024-v3ArKU7ANGVTQjD1zSiZXkUcsuPydYITIRpYO9A"
-  at_secret <- "qBJBdROsGjz5LDAtv8CTrTYg4kCO5VfcAXS3eDPLxo9Po"
+  api_key <- "henmkG6ZyFyZBR92sLLgmwjB6"
+  api_secret_key <- "DmSI6MaJealML7qL6bvfk1tuEZDdJ2uBOeijbDViOfUkvR2G6f"
+  at <- "1330014024-FAKErD5Sa9Kc0r8ph7Eg9M3Xt9SBjlNLHfVQ3al"
+  at_secret <- "nb8zjSNSFPedVHsa7mfzhtHlAFnyilOmnc1BFCIO2XVdW"
 
   ## authenticate via web browser
   token <- create_token(
@@ -46,4 +46,20 @@ get_twitter_token <- function(){
   tk <- get_token()
 
   return(tk)
+}
+
+#' Twitter Bearer Token
+#'
+#' @return A connection to local db
+#' @export
+twitter_bearer_token <- function(){
+
+  # bearer token
+  bearer_token <- "AAAAAAAAAAAAAAAAAAAAAG3%2BVAEAAAAAomkXdiUabO1ZMZSXNpjC1kxdCjs%3DX8x4d4eIUfENGYhm75g0p8274VEpIAxrGgKuWqvFzQnNXy3w1v"
+
+  # define headers
+  headers <- c(`Authorization` = sprintf('Bearer %s', bearer_token))
+
+  return(headers)
+
 }

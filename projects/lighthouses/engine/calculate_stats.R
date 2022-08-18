@@ -41,7 +41,7 @@ dat %>% dplyr::mutate(
     is.na(reply_to_status_id) == T,"tweet","comment"
   ),
   tweet_type = ifelse(
-    is_quote == 1,"quote",tweet_type
+    is_quote == 1,"retweet",tweet_type
   ),
   tweet_type = ifelse(
     is_retweet == 1,"retweet",tweet_type
@@ -68,75 +68,29 @@ dat %>% dplyr::mutate(
 ### GENERAL STATS ###
 #####################
 
-### STATS NO LAST N TWEETS ###
-#t10
-dat %>% dplyr::group_by(
-  screen_name
-) %>% dplyr::top_n(
-  10,
-  created_at
-) %>% dplyr::summarise(
-  activity_t10 = n(),
-  likes_t10 = sum(favorite_count),
-  likes_mean_t10 = mean(favorite_count),
-  tweets_t10 = sum(tweet_type == "tweet"),
-  comments_t10 = sum(tweet_type == "comment"),
-  retweets_t10 = sum(tweet_type == "retweet"),
-  quotes_t10 = sum(tweet_type == "quote")
-) -> dat_t10
+# first we derive the dates/time variables we need
+# the excersize is somewhat complex so we do it up front instead
+# we use the rollback function from lubridate to get last month
+curdate <- Sys.Date()
+#curdate <- as.Date("2022-01-01")
 
-#t50
-dat %>% dplyr::group_by(
-  screen_name
-) %>% dplyr::top_n(
-  50,
-  created_at
-) %>% dplyr::summarise(
-  activity_t50 = n(),
-  likes_t50 = sum(favorite_count),
-  likes_mean_t50 = mean(favorite_count),
-  tweets_t50 = sum(tweet_type == "tweet"),
-  comments_t50 = sum(tweet_type == "comment"),
-  retweets_t50 = sum(tweet_type == "retweet"),
-  quotes_t50 = sum(tweet_type == "quote")
-) -> dat_t50
+# current
+cw <-lubridate::week(curdate)
+cm <- lubridate::month(curdate, label = T)
+cy <- lubridate::year(curdate)
 
-#t250
-dat %>% dplyr::group_by(
-  screen_name
-) %>% dplyr::top_n(
-  250,
-  created_at
-) %>% dplyr::summarise(
-  activity_t250 = n(),
-  likes_t250 = sum(favorite_count),
-  likes_mean_t250 = mean(favorite_count),
-  tweets_t250 = sum(tweet_type == "tweet"),
-  comments_t250 = sum(tweet_type == "comment"),
-  retweets_t250 = sum(tweet_type == "retweet"),
-  quotes_t250 = sum(tweet_type == "quote")
-) -> dat_t250
+# last
+lw <- lubridate::week(curdate-7)
+lm <- lubridate::month(lubridate::rollback(curdate), label = T)
+ly <- lubridate::year(curdate) - 1
 
-#1000
-dat %>% dplyr::group_by(
-  screen_name
-) %>% dplyr::top_n(
-  1000,
-  created_at
-) %>% dplyr::summarise(
-  activity_t1000 = n(),
-  likes_t1000 = sum(favorite_count),
-  likes_mean_t1000 = mean(favorite_count),
-  tweets_t1000 = sum(tweet_type == "tweet"),
-  comments_t1000 = sum(tweet_type == "comment"),
-  retweets_t1000 = sum(tweet_type == "retweet"),
-  quotes_t1000 = sum(tweet_type == "quote")
-) -> dat_t1000
+# in the case of first week in year then define y which is they last year
+y <- cy
+if(cw == 1){
+  y <- ly
+}
 
-### STATS NO LAST N TWEETS GIVEN TIME ###
 # current week
-cw <- lubridate::week(Sys.Date())
-cy <- lubridate::year(Sys.Date())
 dat %>% dplyr::group_by(
   screen_name
 ) %>% dplyr::filter(
@@ -149,12 +103,26 @@ dat %>% dplyr::group_by(
   tweets_curweek = sum(tweet_type == "tweet"),
   comments_curweek = sum(tweet_type == "comment"),
   retweets_curweek = sum(tweet_type == "retweet"),
-  quotes_curweek = sum(tweet_type == "quote")
+  commentsprtweet_curweek = round(comments_curweek/tweets_curweek,2)
 ) -> dat_curweek
 
+# last week
+dat %>% dplyr::group_by(
+  screen_name
+) %>% dplyr::filter(
+  year == y,
+  week == lw
+) %>% dplyr::summarise(
+  activity_lastweek = n(),
+  likes_lastweek = sum(favorite_count),
+  likes_mean_lastweek = mean(favorite_count),
+  tweets_lastweek = sum(tweet_type == "tweet"),
+  comments_lastweek = sum(tweet_type == "comment"),
+  retweets_lastweek = sum(tweet_type == "retweet"),
+  commentsprtweet_lastweek = round(comments_lastweek/tweets_lastweek,2)
+) -> dat_lastweek
+
 # current month
-cm <- lubridate::month(Sys.Date(), label = T)
-cy <- lubridate::year(Sys.Date())
 dat %>% dplyr::group_by(
   screen_name
 ) %>% dplyr::filter(
@@ -167,11 +135,26 @@ dat %>% dplyr::group_by(
   tweets_curmonth = sum(tweet_type == "tweet"),
   comments_curmonth = sum(tweet_type == "comment"),
   retweets_curmonth = sum(tweet_type == "retweet"),
-  quotes_curmonth = sum(tweet_type == "quote")
+  commentsprtweet_curmonth = round(comments_curmonth/tweets_curmonth,2)
 ) -> dat_curmonth
 
+# last month
+dat %>% dplyr::group_by(
+  screen_name
+) %>% dplyr::filter(
+  year == y,
+  month == lm
+) %>% dplyr::summarise(
+  activity_lastmonth = n(),
+  likes_lastmonth = sum(favorite_count),
+  likes_mean_lastmonth = mean(favorite_count),
+  tweets_lastmonth = sum(tweet_type == "tweet"),
+  comments_lastmonth = sum(tweet_type == "comment"),
+  retweets_lastmonth = sum(tweet_type == "retweet"),
+  commentsprtweet_lastmonth = round(comments_lastmonth/tweets_lastmonth,2)
+) -> dat_lastmonth
+
 # current year
-cy <- lubridate::year(Sys.Date())
 dat %>% dplyr::group_by(
   screen_name
 ) %>% dplyr::filter(
@@ -183,13 +166,25 @@ dat %>% dplyr::group_by(
   tweets_curyear = sum(tweet_type == "tweet"),
   comments_curyear = sum(tweet_type == "comment"),
   retweets_curyear = sum(tweet_type == "retweet"),
-  quotes_curyear = sum(tweet_type == "quote")
+  commentsprtweet_curyear = round(comments_curyear/tweets_curyear,2)
 ) -> dat_curyear
 
+# last year
+dat %>% dplyr::group_by(
+  screen_name
+) %>% dplyr::filter(
+  year == ly
+) %>% dplyr::summarise(
+  activity_lastyear = n(),
+  likes_lastyear = sum(favorite_count),
+  likes_mean_lastyear = mean(favorite_count),
+  tweets_lastyear = sum(tweet_type == "tweet"),
+  comments_lastyear = sum(tweet_type == "comment"),
+  retweets_lastyear = sum(tweet_type == "retweet"),
+  commentsprtweet_lastyear = round(comments_lastyear/tweets_lastyear,2)
+) -> dat_lastyear
+
 ### JOIN ###
-# dat_t <- openxlsx::read.xlsx(
-#   "/home/kasper/someR/data/folketinget.xlsx"
-# )
 
 # get master data
 res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_master")
@@ -215,37 +210,7 @@ dat_t %>% dplyr::select(
   profile_image_url
 ) -> dat_t
 
-# get twittern names
-# dat %>% dplyr::distinct(
-#   screen_name,name
-# ) -> twitter_names
-
-# dat_t <- dplyr::left_join(
-#   dat_t,
-#   twitter_names[c("screen_name","name")],
-#   c("user" = "screen_name")
-# )
-
-dat_t <- dplyr::left_join(
-  dat_t,
-  dat_t10,
-  c("screen_name" = "screen_name")
-)
-dat_t <- dplyr::left_join(
-  dat_t,
-  dat_t50,
-  c("screen_name" = "screen_name")
-)
-dat_t <- dplyr::left_join(
-  dat_t,
-  dat_t250,
-  c("screen_name" = "screen_name")
-)
-dat_t <- dplyr::left_join(
-  dat_t,
-  dat_t1000,
-  c("screen_name" = "screen_name")
-)
+# join
 dat_t <- dplyr::left_join(
   dat_t,
   dat_curweek,
@@ -261,12 +226,26 @@ dat_t <- dplyr::left_join(
   dat_curyear,
   c("screen_name" = "screen_name")
 )
+dat_t <- dplyr::left_join(
+  dat_t,
+  dat_lastweek,
+  c("screen_name" = "screen_name")
+)
+dat_t <- dplyr::left_join(
+  dat_t,
+  dat_lastmonth,
+  c("screen_name" = "screen_name")
+)
+dat_t <- dplyr::left_join(
+  dat_t,
+  dat_lastyear,
+  c("screen_name" = "screen_name")
+)
 
 # add followers and friends
 dat %>% dplyr::select(
   screen_name,
   followers_count,
-  friends_count,
   timestamp
 ) %>% dplyr::group_by(
   screen_name
@@ -302,3 +281,4 @@ dbWriteTable(
 )
 
 dbDisconnect(con)
+
