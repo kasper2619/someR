@@ -139,6 +139,13 @@ dbWriteTable(
   row.names = F
 )
 
+# # join in profilepic and party
+dat <- dplyr::left_join(
+  dat,
+  dat_users[c(1,8,9)],
+  by = c("user_id" = "user_id")
+)
+
 # write to db
 dbWriteTable(
   con,

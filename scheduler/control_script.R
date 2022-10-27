@@ -18,7 +18,9 @@ source("/home/kasper/someR/projects/lighthouses/engine/get_user_info.R")
 # 2: download tweets based on excel list in data folder
 source("/home/kasper/someR/projects/lighthouses/engine/get_twitter_user_timeline.R")
 
-# 3: derive central statisctics
+# 3: derive central statisctics from timeline
 source("/home/kasper/someR/projects/lighthouses/engine/calculate_stats.R")
 
+# 4: derive central stats from master data
+#source("/home/kasper/someR/projects/lighthouses/engine/calculate_stats.R")
 

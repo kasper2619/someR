@@ -14,6 +14,11 @@ dat_users <- openxlsx::read.xlsx(
   "/home/kasper/someR/data/folketinget.xlsx"
 )
 
+# remove NA's
+dat_users %>% dplyr::filter(
+  is.na(user) == F
+) -> dat_users
+
 # make connection do db
 con <- someR::con_sql()
 

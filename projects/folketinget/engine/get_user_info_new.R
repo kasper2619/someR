@@ -19,6 +19,11 @@ dat_users <- openxlsx::read.xlsx(
   "/home/kasper/someR/data/folketinget.xlsx"
 )
 
+# remove NA's
+dat_users %>% dplyr::filter(
+  is.na(user) == F
+) -> dat_users
+
 # loop to get user info
 rm(out)
 rate_lim <- 1000

@@ -64,6 +64,50 @@ dat %>% dplyr::mutate(
   hour = lubridate::hour(created_at)
 ) -> dat
 
+# remove followers_count because we derive that otherwise
+dat %>% dplyr::select(
+  -followers_count
+) -> dat
+
+#################################
+### MAKE FOLLOWER DEVELOPMENT ###
+#################################
+res <- dbSendQuery(con, "SELECT * FROM twitter_lighthouses_master")
+dat_users <- dbFetch(res, n = -1)
+dbClearResult(res)
+
+dat_users %>% dplyr::filter(
+  variable == "followers_count"
+) %>% dplyr::select(
+  -variable
+) %>% dplyr::mutate(
+  timestamp = as.Date(timestamp)
+) -> dat_followers
+
+dat_followers %>% dplyr::group_by(
+  user_id,
+  timestamp
+) %>% dplyr::summarise(
+  followers_count = round(mean(as.numeric(value), na.rm = T),0)
+) -> dat_followers
+
+# merge followers into data
+dat <- dplyr::left_join(
+  dat,
+  dat_followers,
+  by = c(
+    "user_id" = "user_id",
+    "date" = "timestamp"
+  )
+)
+
+# fill NA's with last value
+dat %>% dplyr::group_by(
+  user_id
+) %>% tidyr::fill(
+  followers_count
+) -> dat
+
 #####################
 ### GENERAL STATS ###
 #####################
@@ -103,7 +147,8 @@ dat %>% dplyr::group_by(
   tweets_curweek = sum(tweet_type == "tweet"),
   comments_curweek = sum(tweet_type == "comment"),
   retweets_curweek = sum(tweet_type == "retweet"),
-  commentsprtweet_curweek = round(comments_curweek/tweets_curweek,2)
+  commentsprtweet_curweek = round(comments_curweek/tweets_curweek,2),
+  followers_curweek = first(followers_count)
 ) -> dat_curweek
 
 # last week
@@ -119,7 +164,8 @@ dat %>% dplyr::group_by(
   tweets_lastweek = sum(tweet_type == "tweet"),
   comments_lastweek = sum(tweet_type == "comment"),
   retweets_lastweek = sum(tweet_type == "retweet"),
-  commentsprtweet_lastweek = round(comments_lastweek/tweets_lastweek,2)
+  commentsprtweet_lastweek = round(comments_lastweek/tweets_lastweek,2),
+  followers_lastweek = first(followers_count)
 ) -> dat_lastweek
 
 # current month
@@ -135,7 +181,8 @@ dat %>% dplyr::group_by(
   tweets_curmonth = sum(tweet_type == "tweet"),
   comments_curmonth = sum(tweet_type == "comment"),
   retweets_curmonth = sum(tweet_type == "retweet"),
-  commentsprtweet_curmonth = round(comments_curmonth/tweets_curmonth,2)
+  commentsprtweet_curmonth = round(comments_curmonth/tweets_curmonth,2),
+  followers_curmonth = first(followers_count)
 ) -> dat_curmonth
 
 # last month
@@ -151,7 +198,8 @@ dat %>% dplyr::group_by(
   tweets_lastmonth = sum(tweet_type == "tweet"),
   comments_lastmonth = sum(tweet_type == "comment"),
   retweets_lastmonth = sum(tweet_type == "retweet"),
-  commentsprtweet_lastmonth = round(comments_lastmonth/tweets_lastmonth,2)
+  commentsprtweet_lastmonth = round(comments_lastmonth/tweets_lastmonth,2),
+  followers_lastmonth = first(followers_count)
 ) -> dat_lastmonth
 
 # current year
@@ -166,7 +214,8 @@ dat %>% dplyr::group_by(
   tweets_curyear = sum(tweet_type == "tweet"),
   comments_curyear = sum(tweet_type == "comment"),
   retweets_curyear = sum(tweet_type == "retweet"),
-  commentsprtweet_curyear = round(comments_curyear/tweets_curyear,2)
+  commentsprtweet_curyear = round(comments_curyear/tweets_curyear,2),
+  followers_curyear = first(followers_count)
 ) -> dat_curyear
 
 # last year
@@ -181,7 +230,8 @@ dat %>% dplyr::group_by(
   tweets_lastyear = sum(tweet_type == "tweet"),
   comments_lastyear = sum(tweet_type == "comment"),
   retweets_lastyear = sum(tweet_type == "retweet"),
-  commentsprtweet_lastyear = round(comments_lastyear/tweets_lastyear,2)
+  commentsprtweet_lastyear = round(comments_lastyear/tweets_lastyear,2),
+  followers_lastyear = first(followers_count)
 ) -> dat_lastyear
 
 ### JOIN ###
@@ -243,23 +293,23 @@ dat_t <- dplyr::left_join(
 )
 
 # add followers and friends
-dat %>% dplyr::select(
-  screen_name,
-  followers_count,
-  timestamp
-) %>% dplyr::group_by(
-  screen_name
-) %>% dplyr::slice(
-  which.max(as.Date(timestamp))
-) %>% dplyr::select(
-  -timestamp
-) -> dat_followers
-
-dat_t <- dplyr::left_join(
-  dat_t,
-  dat_followers,
-  by = c("screen_name" = "screen_name")
-)
+# dat %>% dplyr::select(
+#   screen_name,
+#   followers_count,
+#   timestamp
+# ) %>% dplyr::group_by(
+#   screen_name
+# ) %>% dplyr::slice(
+#   which.max(as.Date(timestamp))
+# ) %>% dplyr::select(
+#   -timestamp
+# ) -> dat_followers
+#
+# dat_t <- dplyr::left_join(
+#   dat_t,
+#   dat_followers,
+#   by = c("screen_name" = "screen_name")
+# )
 
 # long to wide
 dat_out <- reshape2::melt(

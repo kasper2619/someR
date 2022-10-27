@@ -7,11 +7,11 @@ dat %>% dplyr::distinct(
 ) -> dat
 
 # dat %>% dplyr::filter(
-#  screen_name != "km_frydensbjerg"
+#  screen_name != "AnneSAndersen"
 # ) -> dat
 
 dat <- rbind(
-  dat, data.frame("screen_name" = "JanHoby")
+  dat, data.frame("screen_name" = "josephine_svane")
 )
 
 openxlsx::write.xlsx(dat,"/home/kasper/someR/data/lighthouses.xlsx", rownames = F)

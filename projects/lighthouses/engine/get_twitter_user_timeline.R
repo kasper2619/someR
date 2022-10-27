@@ -144,6 +144,13 @@ dbWriteTable(
   row.names = F
 )
 
+# join in profilepic
+dat <- dplyr::left_join(
+  dat,
+  dat_users[c(1,5)],
+  by = c("user_id" = "user_id")
+)
+
 # write to db
 dbWriteTable(
   con,
