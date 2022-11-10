@@ -2,14 +2,16 @@ dat <- openxlsx::read.xlsx(
   "/home/kasper/someR/data/folketinget.xlsx"
 )
 
-#dat %>% dplyr::filter(
-#  screen_name != "SandieWesth"
-#) -> dat
+dat %>% dplyr::filter(
+  user != "uffeelbaek" | is.na(user) == T
+) -> dat
 
 dat <- rbind(dat, data.frame(
-  "user" = "SikandaSIDDIQUE",
-  "party" = "FG",
-  "blok" = "blue"
+  "user" = "uffeelbaek",
+  "party" = "Å",
+  "blok" = "red",
+  "navn" = "Uffe Elbæk",
+  "list" = NA
 ))
 
 openxlsx::write.xlsx(dat,"/home/kasper/someR/data/folketinget.xlsx", rownames = F)

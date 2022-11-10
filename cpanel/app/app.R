@@ -36,22 +36,31 @@ ui <- # Define UI for application that draws a histogram
         column(width = 12,
                box(title = "Twitter Performance Monitoring", width = 12, height = 54, icon = NULL, background = "black"
                ),
-               box(title = "#dkpol last day", width = 12, icon = NULL, collapsible = T,
+               box(title = "Landingpage last day", width = 12, icon = NULL, collapsible = T,
+                   plotOutput("lp_lastday")
+               ),
+               box(title = "Landingpage last month", width = 12, icon = NULL, collapsible = T,
+                   plotOutput("lp_lastmonth")
+               ),
+               box(title = "Landingpage alltime", width = 12, icon = NULL, collapsible = T,
+                   plotOutput("lp_alltime")
+               ),
+               box(title = "#twittertinget last day", width = 12, icon = NULL, collapsible = T,
                    plotOutput("ft_lastday")
                ),
-               box(title = "#dkpol last month", width = 12, icon = NULL, collapsible = T,
+               box(title = "#twittertinget last month", width = 12, icon = NULL, collapsible = T,
                    plotOutput("ft_lastmonth")
                ),
-               box(title = "#dkpol alltime", width = 12, icon = NULL, collapsible = T,
+               box(title = "#twittertinget alltime", width = 12, icon = NULL, collapsible = T,
                    plotOutput("ft_alltime")
                ),
-               box(title = "#lighthousesdk last day", width = 12, icon = NULL, collapsible = T,
+               box(title = "#lighthouselisten last day", width = 12, icon = NULL, collapsible = T,
                    plotOutput("lh_lastday")
                ),
-               box(title = "#lighthousesdk last month", width = 12, icon = NULL, collapsible = T,
+               box(title = "#lighthouselisten last month", width = 12, icon = NULL, collapsible = T,
                    plotOutput("lh_lastmonth")
                ),
-               box(title = "#lighthousesdk alltime", width = 12, icon = NULL, collapsible = T,
+               box(title = "#lighthouselisten alltime", width = 12, icon = NULL, collapsible = T,
                    plotOutput("lh_alltime")
                )
         )
@@ -80,12 +89,22 @@ server <- shinyServer(function(input, output, session) {
     )
     dat %>% dplyr::mutate(
       time = as.POSIXct(time),
-      app = "folketinget"
+      app = "lighthouses"
     ) -> dat_lighthouses
+
+    # landingpage
+    dat <- read.csv(
+      "/home/kasper/someR/projects/landingpage/logs/visitors.csv"
+    )
+    dat %>% dplyr::mutate(
+      time = as.POSIXct(time),
+      app = "landingpage"
+    ) -> dat_landingpage
 
     dat <- list(
       "folketing" = dat_folketing,
-      "lighthouses" = dat_lighthouses
+      "lighthouses" = dat_lighthouses,
+      "landingpage" = dat_landingpage
     )
 
     return(dat)
@@ -371,6 +390,170 @@ server <- shinyServer(function(input, output, session) {
   output$lh_alltime <- renderPlot({
 
     dat_plot <- dat()[["lighthouses"]]
+
+    dat_plot %>% dplyr::select(
+      -app
+    ) %>% dplyr::mutate(
+      count = 1
+    ) -> dat_plot
+
+    # current day
+    starttime <- as.POSIXct(paste0(as.Date(min(dat_plot[["time"]])))," 23:59:59 UTC")
+    endtime <- as.POSIXct(paste0(Sys.Date()," 23:59:59 UTC"))
+
+    dat_plot %>% dplyr::mutate(
+      time = as.POSIXct(paste0(substr(time,1,11),"00:00:00"))
+    ) -> dat_plot
+
+    dat_plot %>% dplyr::group_by(
+      time
+    ) %>% dplyr::summarise(
+      count = sum(count)
+    ) -> dat_plot
+
+    timeseq <- data.frame(
+      "time" = seq(starttime,endtime,60*60*24)
+    )
+
+    dat_plot <- dplyr::left_join(
+      timeseq,dat_plot,"time"
+    )
+
+    dat_plot %>% dplyr::mutate(
+      count = ifelse(is.na(count) == T,0,count)
+    ) -> dat_plot
+
+    #
+    dat_plot <- reshape2::melt(
+      dat_plot,
+      id.vars = "time"
+    )
+
+    # make plot
+    p <- ggplot(dat_plot, aes(x=time, y=value)) +
+      geom_bar(stat="identity") +
+      ggthemes::theme_economist_white() +
+      xlab("") +
+      ylab("")
+
+    return(p)
+
+  })
+
+  ### LANDIGPAGE ###
+  output$lp_lastday <- renderPlot({
+
+    dat_plot <- dat()[["landingpage"]]
+
+    dat_plot %>% dplyr::select(
+      -app
+    ) %>% dplyr::mutate(
+      count = 1
+    ) -> dat_plot
+
+    # current day
+    starttime <- as.POSIXct(paste0(Sys.Date()," 00:00:00 UTC"))
+    endtime <- as.POSIXct(paste0(Sys.Date()," 23:59:59 UTC"))
+
+    dat_plot %>% dplyr::filter(
+      time > starttime
+    ) %>% dplyr::mutate(
+      time = as.POSIXct(paste0(substr(time,1,13),":00:00"))
+    ) -> dat_plot
+
+    dat_plot %>% dplyr::group_by(
+      time
+    ) %>% dplyr::summarise(
+      count = sum(count)
+    ) -> dat_plot
+
+    timeseq <- data.frame(
+      "time" = seq(starttime,endtime,60*60)
+    )
+
+    dat_plot <- dplyr::left_join(
+      timeseq,dat_plot,"time"
+    )
+
+    dat_plot %>% dplyr::mutate(
+      count = ifelse(is.na(count) == T,0,count)
+    ) -> dat_plot
+
+    #
+    dat_plot <- reshape2::melt(
+      dat_plot,
+      id.vars = "time"
+    )
+
+    # make plot
+    p <- ggplot(dat_plot, aes(x=time, y=value)) +
+      geom_bar(stat="identity") +
+      ggthemes::theme_economist_white() +
+      xlab("") +
+      ylab("")
+
+    return(p)
+
+  })
+
+  output$lp_lastmonth <- renderPlot({
+
+    dat_plot <- dat()[["landingpage"]]
+
+    dat_plot %>% dplyr::select(
+      -app
+    ) %>% dplyr::mutate(
+      count = 1
+    ) -> dat_plot
+
+    # current day
+    starttime <- as.POSIXct(paste0(Sys.Date()," 00:00:00 UTC")) - (60*60*24*30)
+    endtime <- as.POSIXct(paste0(Sys.Date()," 23:59:59 UTC"))
+
+    dat_plot %>% dplyr::filter(
+      time > starttime
+    ) %>% dplyr::mutate(
+      time = as.POSIXct(paste0(substr(time,1,11),"00:00:00"))
+    ) -> dat_plot
+
+    dat_plot %>% dplyr::group_by(
+      time
+    ) %>% dplyr::summarise(
+      count = sum(count)
+    ) -> dat_plot
+
+    timeseq <- data.frame(
+      "time" = seq(starttime,endtime,60*60*24)
+    )
+
+    dat_plot <- dplyr::left_join(
+      timeseq,dat_plot,"time"
+    )
+
+    dat_plot %>% dplyr::mutate(
+      count = ifelse(is.na(count) == T,0,count)
+    ) -> dat_plot
+
+    #
+    dat_plot <- reshape2::melt(
+      dat_plot,
+      id.vars = "time"
+    )
+
+    # make plot
+    p <- ggplot(dat_plot, aes(x=time, y=value)) +
+      geom_bar(stat="identity") +
+      ggthemes::theme_economist_white() +
+      xlab("") +
+      ylab("")
+
+    return(p)
+
+  })
+
+  output$lp_alltime <- renderPlot({
+
+    dat_plot <- dat()[["landingpage"]]
 
     dat_plot %>% dplyr::select(
       -app

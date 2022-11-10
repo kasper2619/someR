@@ -11,7 +11,7 @@ dat %>% dplyr::distinct(
 # ) -> dat
 
 dat <- rbind(
-  dat, data.frame("screen_name" = "josephine_svane")
+  dat, data.frame("screen_name" = "KHegaard")
 )
 
 openxlsx::write.xlsx(dat,"/home/kasper/someR/data/lighthouses.xlsx", rownames = F)
