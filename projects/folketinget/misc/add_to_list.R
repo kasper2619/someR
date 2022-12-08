@@ -3,7 +3,7 @@ dat <- openxlsx::read.xlsx(
 )
 
 dat %>% dplyr::filter(
-  user != "uffeelbaek" | is.na(user) == T
+  user != "stinuslindgreen" | is.na(user) == T
 ) -> dat
 
 dat <- rbind(dat, data.frame(

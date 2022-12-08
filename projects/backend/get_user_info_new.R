@@ -8,24 +8,58 @@ library(RMySQL)
 library(dplyr)
 
 # Get Users ----
+# join twittertinget and lighthouselisten together
 
-dat_users <- openxlsx::read.xlsx(
-  "/home/kasper/someR/data/folketinget.xlsx"
+# # twittertinget
+# dat_twittertinget <- openxlsx::read.xlsx(
+#   "/home/kasper/someR/data/twittertinget.xlsx"
+# )
+# dat_twittertinget <- reshape2::melt(
+#   dat_twittertinget,
+#   id.vars = c("user"),
+#   measure.vars = c("party","blok","list","country","affiliation")
+# )
+#
+# # lighthouselisten
+# dat_lighthouselisten <- openxlsx::read.xlsx(
+#   "/home/kasper/someR/data/lighthouselisten.xlsx"
+# )
+# dat_lighthouselisten <- reshape2::melt(
+#   dat_lighthouselisten,
+#   id.vars = c("user"),
+#   measure.vars = c("list","country","affiliation")
+# )
+#
+# # bind
+# dat_users <- rbind(
+#   dat_lighthouselisten,
+#   dat_twittertinget
+# )
+#
+# # reshape
+# dat_users <- reshape2::dcast(
+#   dat_users,
+#   "user ~ variable"
+# )
+#
+# # remove NA's
+# dat_users %>% dplyr::filter(
+#   is.na(user) == F
+# ) -> dat_users
+
+dat_users<- openxlsx::read.xlsx(
+  "/home/kasper/someR/projects/backend/data/users.xlsx"
 )
-dat_users %>% dplyr::select(
-  -list
-) -> dat_users
-
-# remove NA's
-dat_users %>% dplyr::filter(
-  is.na(user) == F
+dat_users %>% dplyr::distinct(
+  user,
+  .keep_all = T
 ) -> dat_users
 
 # Start Loop ----
 headers <- someR::twitter_bearer_token()
 
 rm(out)
-for(user in dat_users[["user"]]){
+for(user in unique(dat_users[["user"]])){
 
   ## Define Query ----
   params = list(
@@ -82,30 +116,8 @@ for(user in dat_users[["user"]]){
 }
 # Stop Loop ----
 
-# Rename Columns ----
-out %>% dplyr::rename(
-  "user_id" = id,
-  "following_count" = public_metrics.following_count,
-  "tweet_count" = public_metrics.tweet_count,
-  "listed_count" = public_metrics.listed_count,
-  "followers_count" = public_metrics.followers_count,
-  "user_created_at" = created_at
-) -> out
-
-# select
-out %>% dplyr::select(
-  user_id,
-  username,
-  name,
-  user_created_at,
-  location,
-  profile_image_url,
-  url,
-  followers_count,
-  following_count,
-  tweet_count,
-  listed_count
-) -> out
+# remove dots from colnames
+names(out) <- gsub("\\.","_",names(out))
 
 # add additional information from sheet
 out <- dplyr::left_join(
@@ -120,17 +132,17 @@ out[["timestamp"]] <- Sys.time()+60*60
 out <- reshape2::melt(
   out,
   id.vars = c(
-    "user_id",
+    "id",
     "timestamp"
   )
 )
 
-# Write to Database ----
+# Write Raw Data to Database ----
 con <- someR::con_sql()
 dbSendQuery(con, "SET GLOBAL local_infile = true;")
 dbWriteTable(
   con,
-  "twitter_twittertinget_master",
+  "twitter_users_raw",
   out,
   overwrite = F,
   append = T,
@@ -139,10 +151,8 @@ dbWriteTable(
 
 dbDisconnect(con)
 
-# make con
-con <- someR::con_sql()
-res <- dbSendQuery(con, "SELECT * FROM twitter_twittertinget_master")
-dat <- dbFetch(res, n = -1)
-dbClearResult(res)
-
-
+# # make con
+# con <- someR::con_sql()
+# res <- dbSendQuery(con, "SELECT * FROM twitter_users_raw")
+# dat <- dbFetch(res, n = -1)
+# dbClearResult(res)
