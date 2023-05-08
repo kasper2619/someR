@@ -55,6 +55,10 @@ dat_users %>% dplyr::distinct(
   .keep_all = T
 ) -> dat_users
 
+dat_users %>% dplyr::select(
+  -badge
+) -> dat_users
+
 # Start Loop ----
 headers <- someR::twitter_bearer_token()
 

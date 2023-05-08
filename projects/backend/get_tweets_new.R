@@ -26,7 +26,7 @@ dbDisconnect(con)
 #   is.na(user) == F
 # ) -> dat_users
 
-i <- "1079806855"
+i <- "130160241"
 
 # Get Data ----
 for(i in dat_users[["id"]]){
@@ -66,6 +66,12 @@ for(i in dat_users[["id"]]){
 
     # check if rate limit is OK. elsewise pause
     print(rate_lim)
+    if(rate_lim < 750){
+      print("Pausing")
+      pause <- as.POSIXct(as.numeric(rate_lim_reset), origin="1970-01-01") - Sys.time()
+      pause <- ceiling(60*as.numeric(pause))+60
+      Sys.sleep(pause)
+    }
     if(rate_lim < 5){
       print("Pausing")
       pause <- as.POSIXct(as.numeric(rate_lim_reset), origin="1970-01-01") - Sys.time()

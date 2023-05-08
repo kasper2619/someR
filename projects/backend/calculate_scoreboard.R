@@ -108,6 +108,14 @@ dat %>% dplyr::select(
   text
 ) -> dat
 
+## "NA" to NA ----
+dat %>% dplyr::mutate(
+  across(
+    .cols = everything(),
+    ~na_if(.,"NA")
+  )
+) -> dat
+
 ## Calculate Sentiments----
 dat[["sentiment_mean"]] <- sapply(
   dat[["text"]],
@@ -123,14 +131,6 @@ dat[["sentiment_total"]] <- sapply(
 
 )
 dat[["sentiment_total"]] <- round(dat[["sentiment_total"]],2)
-
-## "NA" to NA ----
-dat %>% dplyr::mutate(
-  across(
-    .cols = everything(),
-    ~na_if(.,"NA")
-  )
-) -> dat
 
 # make columns defining type of tweets
 dat %>% dplyr::rename(

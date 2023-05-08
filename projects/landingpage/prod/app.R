@@ -46,7 +46,7 @@ ui <- shinyUI(
           fluidRow(
             column(4, panel_div(class_type = "", panel_title = "Instruktioner", content = "Du tilgår vores apps ved at klikke på de respektive links")),
             column(4, panel_div(class_type = "", panel_title = "Kontakt", content = "Kontakt os ved at skrive til @Fast4Ward_ på Twitter")),
-            column(4, panel_div("info", "Status", "Alt kører! Vi arbejder på at opdatere Twittertinget med de nye medlemmer"))
+            column(4, panel_div("success", "Status", "Alt kører!"))
           ),  # end of fluidRow
           fluidRow(
             tags$head(tags$link(rel="shortcut icon", href="favicon.ico")),

@@ -53,7 +53,8 @@ ui <- # Define UI for application that draws a histogram
               selectizeInput("list", "List",
                 choices = c(
                   "twittertinget",
-                  "lighthouselisten"
+                  "lighthouselisten",
+                  "danskemedier"
                 )
               )
             ),
@@ -64,7 +65,15 @@ ui <- # Define UI for application that draws a histogram
                   "other"
                 )
               )
-            )
+            ),
+            column(2,
+              selectizeInput("badge", "Badge",
+                choices = c(
+                  NA,
+                  "Happy"
+                )
+              )
+            ),
           )
         )
       ),
@@ -96,7 +105,8 @@ server <- shinyServer(function(input, output, session) {
       country = input$country,
       affiliation = input$affil,
       party = input$party,
-      blok = input$blok
+      blok = input$blok,
+      badge = input$badge
     )
 
     dat <- rbind(
@@ -104,7 +114,7 @@ server <- shinyServer(function(input, output, session) {
       db()
     )
 
-    dat_users<- openxlsx::write.xlsx(
+    openxlsx::write.xlsx(
       dat,
       "/home/kasper/someR/projects/backend/data/users.xlsx",
       rownames = F
@@ -120,7 +130,7 @@ server <- shinyServer(function(input, output, session) {
       user != !!input$username
     ) -> dat
 
-    dat_users<- openxlsx::write.xlsx(
+    openxlsx::write.xlsx(
       dat,
       "/home/kasper/someR/projects/backend/data/users.xlsx",
       rownames = F
