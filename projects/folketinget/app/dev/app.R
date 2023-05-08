@@ -15,6 +15,7 @@ library(reactablefmtr)
 library(dplyr)
 library(shiny)
 library(shinycssloaders)
+library(auth0)
 
 # Define UI for application that draws a histogram
 ui <- # Define UI for application that draws a histogram
@@ -2235,3 +2236,4 @@ server <- shinyServer(function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+#auth0::shinyAppAuth0(ui, server)

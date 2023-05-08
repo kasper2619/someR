@@ -35,7 +35,7 @@ ui <- # Define UI for application that draws a histogram
     ### BODY ###
     dashboardBody(
 
-      # extend screen automatically
+      # extend screen automatically and enable twitter widget
       tags$head(
         tags$style(
           HTML('.content-wrapper { overflow: auto; }' ),

@@ -1,7 +1,7 @@
 library(openai)
 
 Sys.setenv(
-  OPENAI_API_KEY = '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'
+  OPENAI_API_KEY = ''
 )
 
 Sys.getenv("OPENAI_API_KEY")
