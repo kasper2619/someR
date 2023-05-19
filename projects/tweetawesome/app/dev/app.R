@@ -92,22 +92,26 @@ ui <- # Define UI for application that draws a histogram
           )
         )
       ),
-      )
     )
+  )
 
 # Define server logic required to draw a histogram
 server <- shinyServer(function(input, output, session) {
 
-  # Pop-Up Box ----
+  # Get Handle ----
+  handle <- reactive({
+    #handle <- session$userData$auth0_info$twitter_handle
+    handle <- "kasper2619"
+    #handle <- "ONdbdetliungsit"
+    return(handle)
+  })
 
   # Load Timeline Data ----
   dat_tl <- reactive({
 
     # get
     #handle <- session$userData$auth0_info$twitter_handle
-    handle <- "kasper2619"
-    #handle <- "ONdbdetliungsit"
-    dat <- get_user_timeline_xdays(handle,xdays = 30, maxtweets = 500)
+    dat <- get_user_timeline_xdays(handle(),xdays = 30, maxtweets = 500)
 
     return(dat)
   })
@@ -116,14 +120,20 @@ server <- shinyServer(function(input, output, session) {
   output$ddmenu <- renderMenu(
     dropdownMenu(headerText = "",
       type = "notifications",
-      messageItem(
-        from = "Need help?",
-        message = "Write to @Fast4Ward_ on Twitter",
-        icon = icon("life-ring"),
+      notificationItem(
+        text = paste0("Logged in as: ",handle()),
+        icon = shiny::icon("user", lib = "font-awesome"),
+        status = "primary"
       ),
       notificationItem(
         logoutButton(label = "Log Out"),
-        icon = shiny::icon("off", lib = "glyphicon")
+        icon = shiny::icon("off", lib = "glyphicon"),
+        status = "primary"
+      ),
+      messageItem(
+        from = "Need help?",
+        message = "Write to @Fast4Ward_ on Twitter",
+        icon = icon("life-ring")
       )
     )
   )
@@ -220,7 +230,8 @@ server <- shinyServer(function(input, output, session) {
         title = "",
         stackLabels = list(enabled = TRUE)
       ) %>% hc_tooltip(
-        crosshairs = F
+        crosshairs = F,
+        pointFormat = '<b>{point.y}</b><br/>'
       ) -> plot
 
     return(plot)
@@ -254,6 +265,9 @@ server <- shinyServer(function(input, output, session) {
       ) %>% hc_yAxis(
         title = "",
         stackLabels = list(enabled = TRUE)
+      ) %>% hc_tooltip(
+        crosshairs = F,
+        pointFormat = '<b>{point.y}</b><br/>'
       ) -> plot
 
     return(plot)
@@ -287,6 +301,9 @@ server <- shinyServer(function(input, output, session) {
       ) %>% hc_yAxis(
         title = "",
         stackLabels = list(enabled = TRUE)
+      ) %>% hc_tooltip(
+        crosshairs = F,
+        pointFormat = '<b>{point.y}</b><br/>'
       ) -> plot
 
     return(plot)
@@ -383,7 +400,6 @@ server <- shinyServer(function(input, output, session) {
     )
   })
 })
-
 
 # Run the application
 #auth0::shinyAppAuth0(ui, server)

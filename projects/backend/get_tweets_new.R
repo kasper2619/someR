@@ -26,7 +26,7 @@ dbDisconnect(con)
 #   is.na(user) == F
 # ) -> dat_users
 
-i <- "130160241"
+i <- "1513224926391676931"
 
 # Get Data ----
 for(i in dat_users[["id"]]){
@@ -88,6 +88,9 @@ for(i in dat_users[["id"]]){
     simplifyDataFrame = T,
     flatten = T
   )
+  if(is.null(dat[["meta"]][["result_count"]]) == T){
+    next
+  }
   if(dat[["meta"]][["result_count"]] == 0){
     next
   }

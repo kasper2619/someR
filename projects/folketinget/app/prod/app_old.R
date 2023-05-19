@@ -16,7 +16,6 @@ library(dplyr)
 library(shiny)
 library(shinycssloaders)
 library(auth0)
-library(highcharter)
 
 #auth0::use_auth0(overwrite = T)
 #usethis::edit_r_environ()
@@ -27,7 +26,7 @@ ui <- # Define UI for application that draws a histogram
   dashboardPage(skin = "black",title="#twittertinget",
 
     ### HEADER ###
-    dbHeader <- dashboardHeader(disable = F, title = "#twittertinget v2.5", dropdownMenuOutput("ddmenu")),
+    dbHeader <- dashboardHeader(disable = F, title = "#twittertinget v2.0", dropdownMenuOutput("ddmenu")),
 
     ### SIDEBAR ###
     dashboardSidebar(disable = T, collapsed = T),
@@ -42,31 +41,6 @@ ui <- # Define UI for application that draws a histogram
       fluidRow(
         column(
           width = 12,
-            fluidRow(
-              box(title = h3("Twittertinget Mandater"), width = 6, collapsible = T, solidHeader = F,
-                tabsetPanel(type = "pills",
-                  tabPanel("Twittertinget",
-                    highchartOutput("twittertinget") %>% withSpinner(type = 2, color.background = "white", color="#438ccd", size = 3)
-                  )
-                )
-              ),
-              box(title = h3("Twittertinget Likes"), width = 6, collapsible = T, solidHeader = F,
-                tabsetPanel(type = "pills", selected = "Denne Uge",
-                  tabPanel(
-                    "Denne Uge",
-                    highchartOutput("twittertinget_curweek_likes") %>% withSpinner(type = 2, color.background = "white", color="#438ccd", size = 3)
-                  ),
-                  tabPanel(
-                    "Denne Måned",
-                    highchartOutput("twittertinget_curmonth_likes") %>% withSpinner(type = 2, color.background = "white", color="#438ccd", size = 3)
-                  ),
-                  tabPanel(
-                    "Dette År",
-                    highchartOutput("twittertinget_curyear_likes") %>% withSpinner(type = 2, color.background = "white", color="#438ccd", size = 3)
-                  )
-                )
-              )
-            ),
             box(title = h3("Scoreboard"), width = 12, collapsible = T, solidHeader = F,
               tabsetPanel(type = "pills", selected = "Idag",
                 tabPanel(
@@ -158,8 +132,6 @@ server <- shinyServer(function(input, output, session) {
         username,
         name,
         profile_image_url,
-        affiliation,
-        party,
         variable,
         value
       FROM twitter_scoreboard
@@ -171,67 +143,9 @@ server <- shinyServer(function(input, output, session) {
 
     dat <- reshape2::dcast(
       dat,
-      "username + name + profile_image_url + affiliation + party ~ variable",
+      "username + name + profile_image_url ~ variable",
       value.var = "value"
     )
-
-    return(dat)
-
-  })
-
-  # Orchestrate Data for Vizulisation ----
-  dat_twittertinget <- reactive({
-
-    dat() %>% dplyr::select(
-      username,
-      name,
-      affiliation,
-      party,
-      likes_curday,
-      likes_curweek,
-      likes_curmonth,
-      likes_curyear,
-      likes_lastday,
-      likes_lastweek,
-      likes_lastmonth,
-      likes_lastyear
-    ) -> dat
-
-    # reorder
-    dat[["affiliation"]] <- as.factor(dat[["affiliation"]])
-    dat_viz[["affiliation"]] <- factor(dat_viz[["affiliation"]], levels = c(
-      "Enhedslisten","Alternativet","Socialistisk Folkeparti",
-      "Socialdemokratiet","Grønland","Radikale Venstre",
-      "Moderaterne","Konservative","Færøerne",
-      "Venstre","Liberal Alliance","Danmarksdemokraterne",
-      "Dansk Folkeparti","Nye Borgerlige","Frigænger")
-    )
-
-    # summarize
-    dat %>% dplyr::group_by(
-      affiliation
-    ) %>% dplyr::summarise(
-      count = n()
-    ) -> dat
-
-    dat %>% dplyr::mutate(
-      color = "#202123",
-      color = ifelse(party == "A","#F40526",color),
-      color = ifelse(party == "Æ","#4E77A3",color),
-      color = ifelse(party == "B","#E82E8A",color),
-      color = ifelse(party == "C","#165738",color),
-      color = ifelse(party == "D","#134851",color),
-      color = ifelse(party == "F","#EE9C9F",color),
-      color = ifelse(party == "FRI","#BDBDBD",color),
-      color = ifelse(party == "FØ","#BDBDBD",color),
-      color = ifelse(party == "GL","#BDBDBD",color),
-      color = ifelse(party == "I","#EEA925",color),
-      color = ifelse(party == "M","#842990",color),
-      color = ifelse(party == "O","#235CA9",color),
-      color = ifelse(party == "Ø","#D0004E",color),
-      color = ifelse(party == "V","#19438E",color),
-      color = ifelse(party == "Å","#37BD00",color)
-    ) -> dat
 
     return(dat)
 
@@ -301,7 +215,7 @@ server <- shinyServer(function(input, output, session) {
       date = as.Date(created_at),
       year = lubridate::year(created_at),
       month = lubridate::month(created_at, label = T),
-      week = lubridate::epiweek(date+1),
+      week = lubridate::week(created_at),
       wday = lubridate::wday(created_at, label = T),
       hour = lubridate::hour(created_at)
     ) -> dat_tweets
@@ -352,7 +266,7 @@ server <- shinyServer(function(input, output, session) {
     # this week
     dat_tweets %>% dplyr::filter(
       year == lubridate::year(Sys.Date()),
-      week == lubridate::epiweek(Sys.Date()+1)
+      week == lubridate::week(Sys.Date())
     ) %>% dplyr::select(
       -date,
       -year,
@@ -367,7 +281,7 @@ server <- shinyServer(function(input, output, session) {
     # last week
     dat_tweets %>% dplyr::filter(
       year == lubridate::year(Sys.Date()),
-      week == lubridate::epiweek(Sys.Date()+1)-1
+      week == lubridate::week(Sys.Date())-1
     ) %>% dplyr::select(
       -date,
       -year,
@@ -487,334 +401,6 @@ server <- shinyServer(function(input, output, session) {
     )
   )
 
-  ## Vizualize ----
-
-  ## Twittertinget Mandater ----
-  output$twittertinget <- renderHighchart({
-
-    dat() %>% dplyr::select(
-      username,
-      name,
-      affiliation,
-      party
-    ) -> dat
-
-    m <- nrow(dat)
-
-    # reorder
-    dat[["affiliation"]] <- as.factor(dat[["affiliation"]])
-    dat[["affiliation"]] <- factor(dat[["affiliation"]], levels = c(
-      "Enhedslisten","Alternativet","Socialistisk Folkeparti",
-      "Socialdemokratiet","Grønland","Radikale Venstre",
-      "Moderaterne","Konservative","Færøerne",
-      "Venstre","Liberal Alliance","Danmarksdemokraterne",
-      "Dansk Folkeparti","Nye Borgerlige","Frigænger")
-    )
-
-    # summarize
-    dat %>% dplyr::group_by(
-      affiliation,party
-    ) %>% dplyr::summarise(
-      count = n()
-    ) -> dat
-
-    dat %>% dplyr::mutate(
-      color = "#202123",
-      color = ifelse(party == "A","#F40526",color),
-      color = ifelse(party == "Æ","#4E77A3",color),
-      color = ifelse(party == "B","#E82E8A",color),
-      color = ifelse(party == "C","#165738",color),
-      color = ifelse(party == "D","#134851",color),
-      color = ifelse(party == "F","#EE9C9F",color),
-      color = ifelse(party == "FRI","#BDBDBD",color),
-      color = ifelse(party == "FØ","#BDBDBD",color),
-      color = ifelse(party == "GL","#BDBDBD",color),
-      color = ifelse(party == "I","#EEA925",color),
-      color = ifelse(party == "M","#842990",color),
-      color = ifelse(party == "O","#235CA9",color),
-      color = ifelse(party == "Ø","#D0004E",color),
-      color = ifelse(party == "V","#19438E",color),
-      color = ifelse(party == "Å","#37BD00",color)
-    ) -> dat
-
-    plot <- hchart(
-      dat,
-      "item",
-      hcaes(
-        name = affiliation,
-        y = count,
-        #label = abbrv,
-        color = color
-      ),
-      name = "",
-      showInLegend = TRUE,
-      size = "100%",
-      center = list("50%", "75%"),
-      startAngle = -100,
-      endAngle  = 100
-    ) %>%
-      hc_title(text = "") %>%
-      hc_legend(labelFormat = '{name} <span style="opacity: 0.4">{y}</span>') %>%
-      hc_caption(text = paste0("Viser fordelingen af de ",m," folketingspolitikere der blev valgt ind ved sidste valg, som er på Twitter!")) %>%
-      hc_exporting(
-        enabled = TRUE, # always enabled
-        filename = "output"
-      )
-
-    return(plot)
-
-  })
-
-  ## Twittertinget Likes på Ugen ----
-  output$twittertinget_curweek_likes <- renderHighchart({
-
-    dat() %>% dplyr::select(
-      username,
-      name,
-      affiliation,
-      party,
-      likes_curday,
-      likes_curweek,
-      likes_curmonth,
-      likes_curyear,
-      likes_lastday,
-      likes_lastweek,
-      likes_lastmonth,
-      likes_lastyear
-    ) -> dat
-
-    # reorder
-    dat[["affiliation"]] <- as.factor(dat[["affiliation"]])
-    dat[["affiliation"]] <- factor(dat[["affiliation"]], levels = c(
-      "Enhedslisten","Alternativet","Socialistisk Folkeparti",
-      "Socialdemokratiet","Grønland","Radikale Venstre",
-      "Moderaterne","Konservative","Færøerne",
-      "Venstre","Liberal Alliance","Danmarksdemokraterne",
-      "Dansk Folkeparti","Nye Borgerlige","Frigænger")
-    )
-
-    # summarize
-    m <- round(sum(dat[["likes_curweek"]],na.rm=T)/nrow(dat),0)
-    dat %>% dplyr::group_by(
-      affiliation,party
-    ) %>% dplyr::summarise(
-      count = round(sum(likes_curweek,na.rm=T)/m,0)
-    ) -> dat
-
-    dat %>% dplyr::mutate(
-      color = "#202123",
-      color = ifelse(party == "A","#F40526",color),
-      color = ifelse(party == "Æ","#4E77A3",color),
-      color = ifelse(party == "B","#E82E8A",color),
-      color = ifelse(party == "C","#165738",color),
-      color = ifelse(party == "D","#134851",color),
-      color = ifelse(party == "F","#EE9C9F",color),
-      color = ifelse(party == "FRI","#BDBDBD",color),
-      color = ifelse(party == "FØ","#BDBDBD",color),
-      color = ifelse(party == "GL","#BDBDBD",color),
-      color = ifelse(party == "I","#EEA925",color),
-      color = ifelse(party == "M","#842990",color),
-      color = ifelse(party == "O","#235CA9",color),
-      color = ifelse(party == "Ø","#D0004E",color),
-      color = ifelse(party == "V","#19438E",color),
-      color = ifelse(party == "Å","#37BD00",color)
-    ) -> dat
-
-    plot <- hchart(
-      dat,
-      "item",
-      hcaes(
-        name = affiliation,
-        y = count,
-        #label = abbrv,
-        color = color
-      ),
-      name = "",
-      showInLegend = TRUE,
-      size = "100%",
-      center = list("50%", "75%"),
-      startAngle = -100,
-      endAngle  = 100
-    ) %>%
-      hc_title(text = "") %>%
-      hc_legend(labelFormat = '{name} <span style="opacity: 0.4">{y}</span>') %>%
-      hc_caption(text = paste0("Viser fordelingen af mandater baseret på likes. I indeværende periode kræver et mandat pt. ",m," likes!")) %>%
-      hc_exporting(
-        enabled = TRUE, # always enabled
-        filename = "output"
-      )
-
-
-    return(plot)
-
-  })
-
-  ## Twittertinget Likes på Måneden ----
-  output$twittertinget_curmonth_likes <- renderHighchart({
-
-    dat() %>% dplyr::select(
-      username,
-      name,
-      affiliation,
-      party,
-      likes_curday,
-      likes_curweek,
-      likes_curmonth,
-      likes_curyear,
-      likes_lastday,
-      likes_lastweek,
-      likes_lastmonth,
-      likes_lastyear
-    ) -> dat
-
-    # reorder
-    dat[["affiliation"]] <- as.factor(dat[["affiliation"]])
-    dat[["affiliation"]] <- factor(dat[["affiliation"]], levels = c(
-      "Enhedslisten","Alternativet","Socialistisk Folkeparti",
-      "Socialdemokratiet","Grønland","Radikale Venstre",
-      "Moderaterne","Konservative","Færøerne",
-      "Venstre","Liberal Alliance","Danmarksdemokraterne",
-      "Dansk Folkeparti","Nye Borgerlige","Frigænger")
-    )
-
-    # summarize
-    m <- round(sum(dat[["likes_curmonth"]],na.rm=T)/nrow(dat),0)
-    dat %>% dplyr::group_by(
-      affiliation,party
-    ) %>% dplyr::summarise(
-      count = round(sum(likes_curmonth,na.rm=T)/m,0)
-    ) -> dat
-
-    dat %>% dplyr::mutate(
-      color = "#202123",
-      color = ifelse(party == "A","#F40526",color),
-      color = ifelse(party == "Æ","#4E77A3",color),
-      color = ifelse(party == "B","#E82E8A",color),
-      color = ifelse(party == "C","#165738",color),
-      color = ifelse(party == "D","#134851",color),
-      color = ifelse(party == "F","#EE9C9F",color),
-      color = ifelse(party == "FRI","#BDBDBD",color),
-      color = ifelse(party == "FØ","#BDBDBD",color),
-      color = ifelse(party == "GL","#BDBDBD",color),
-      color = ifelse(party == "I","#EEA925",color),
-      color = ifelse(party == "M","#842990",color),
-      color = ifelse(party == "O","#235CA9",color),
-      color = ifelse(party == "Ø","#D0004E",color),
-      color = ifelse(party == "V","#19438E",color),
-      color = ifelse(party == "Å","#37BD00",color)
-    ) -> dat
-
-    plot <- hchart(
-      dat,
-      "item",
-      hcaes(
-        name = affiliation,
-        y = count,
-        #label = abbrv,
-        color = color
-      ),
-      name = "",
-      showInLegend = TRUE,
-      size = "100%",
-      center = list("50%", "75%"),
-      startAngle = -100,
-      endAngle  = 100
-    ) %>%
-      hc_title(text = "") %>%
-      hc_legend(labelFormat = '{name} <span style="opacity: 0.4">{y}</span>') %>%
-      hc_caption(text = paste0("Viser fordelingen af mandater baseret på likes. I indeværende periode kræver et mandat pt. ",m," likes!")) %>%
-      hc_exporting(
-        enabled = TRUE, # always enabled
-        filename = "output"
-      )
-
-    return(plot)
-
-  })
-
-  ## Twittertinget Likes på Året ----
-  output$twittertinget_curyear_likes <- renderHighchart({
-
-    dat() %>% dplyr::select(
-      username,
-      name,
-      affiliation,
-      party,
-      likes_curday,
-      likes_curweek,
-      likes_curmonth,
-      likes_curyear,
-      likes_lastday,
-      likes_lastweek,
-      likes_lastmonth,
-      likes_lastyear
-    ) -> dat
-
-    # reorder
-    dat[["affiliation"]] <- as.factor(dat[["affiliation"]])
-    dat[["affiliation"]] <- factor(dat[["affiliation"]], levels = c(
-      "Enhedslisten","Alternativet","Socialistisk Folkeparti",
-      "Socialdemokratiet","Grønland","Radikale Venstre",
-      "Moderaterne","Konservative","Færøerne",
-      "Venstre","Liberal Alliance","Danmarksdemokraterne",
-      "Dansk Folkeparti","Nye Borgerlige","Frigænger")
-    )
-
-    # summarize
-    m <- round(sum(dat[["likes_curyear"]],na.rm=T)/nrow(dat),0)
-    dat %>% dplyr::group_by(
-      affiliation,party
-    ) %>% dplyr::summarise(
-      count = round(sum(likes_curyear,na.rm=T)/m,0)
-    ) -> dat
-
-    dat %>% dplyr::mutate(
-      color = "#202123",
-      color = ifelse(party == "A","#F40526",color),
-      color = ifelse(party == "Æ","#4E77A3",color),
-      color = ifelse(party == "B","#E82E8A",color),
-      color = ifelse(party == "C","#165738",color),
-      color = ifelse(party == "D","#134851",color),
-      color = ifelse(party == "F","#EE9C9F",color),
-      color = ifelse(party == "FRI","#BDBDBD",color),
-      color = ifelse(party == "FØ","#BDBDBD",color),
-      color = ifelse(party == "GL","#BDBDBD",color),
-      color = ifelse(party == "I","#EEA925",color),
-      color = ifelse(party == "M","#842990",color),
-      color = ifelse(party == "O","#235CA9",color),
-      color = ifelse(party == "Ø","#D0004E",color),
-      color = ifelse(party == "V","#19438E",color),
-      color = ifelse(party == "Å","#37BD00",color)
-    ) -> dat
-
-    plot <- hchart(
-      dat,
-      "item",
-      hcaes(
-        name = affiliation,
-        y = count,
-        #label = abbrv,
-        color = color
-      ),
-      name = "",
-      showInLegend = TRUE,
-      size = "100%",
-      center = list("50%", "75%"),
-      startAngle = -100,
-      endAngle  = 100
-    ) %>%
-      hc_title(text = "") %>%
-      hc_legend(labelFormat = '{name} <span style="opacity: 0.4">{y}</span>') %>%
-      hc_caption(text = paste0("Viser fordelingen af mandater baseret på likes. I indeværende periode kræver et mandat pt. ",m," likes!")) %>%
-      hc_exporting(
-        enabled = TRUE, # always enabled
-        filename = "output"
-      )
-
-    return(plot)
-
-  })
-
   # Orchestrate Data for Scoreboard ----
   dat_tables <- reactive({
 
@@ -832,9 +418,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_curday,
       activity_curday,
       tweets_curday,
@@ -853,8 +436,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_curday,
-      affiliation,
-      party,
 
       placering,
       likes_curday,
@@ -871,9 +452,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_lastday,
       activity_lastday,
       tweets_lastday,
@@ -892,8 +470,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_lastday,
-      affiliation,
-      party,
 
       placering,
       likes_lastday,
@@ -910,9 +486,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_curweek,
       activity_curweek,
       tweets_curweek,
@@ -931,8 +504,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_curweek,
-      affiliation,
-      party,
 
       placering,
       likes_curweek,
@@ -949,9 +520,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_lastweek,
       activity_lastweek,
       tweets_lastweek,
@@ -970,8 +538,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_lastweek,
-      affiliation,
-      party,
 
       placering,
       likes_lastweek,
@@ -988,9 +554,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_curmonth,
       activity_curmonth,
       tweets_curmonth,
@@ -1009,8 +572,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_curmonth,
-      affiliation,
-      party,
 
       placering,
       likes_curmonth,
@@ -1027,9 +588,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_lastmonth,
       activity_lastmonth,
       tweets_lastmonth,
@@ -1048,8 +606,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_lastmonth,
-      affiliation,
-      party,
 
       placering,
       likes_lastmonth,
@@ -1066,9 +622,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_curyear,
       activity_curyear,
       tweets_curyear,
@@ -1087,8 +640,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_curyear,
-      affiliation,
-      party,
 
       placering,
       likes_curyear,
@@ -1105,9 +656,6 @@ server <- shinyServer(function(input, output, session) {
       username,
       name,
       profile_image_url,
-      affiliation,
-      party,
-
       followers_lastyear,
       activity_lastyear,
       tweets_lastyear,
@@ -1126,8 +674,6 @@ server <- shinyServer(function(input, output, session) {
       profile_image_url,
       name,
       followers_lastyear,
-      affiliation,
-      party,
 
       placering,
       likes_lastyear,
@@ -1196,20 +742,6 @@ server <- shinyServer(function(input, output, session) {
           align = "center",
           minWidth = 80
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         placering = colDef(
           name = paste(emo::ji("trophy"), sep = " "),
           align = "center",
@@ -1264,7 +796,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_curday")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_curday", "impact_curday","commentsprtweet_curday","retweets_curday"))
       )
     )
@@ -1412,20 +943,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_lastday = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -1471,7 +988,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_lastday")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_lastday", "impact_lastday","commentsprtweet_lastday","retweets_lastday"))
       )
     )
@@ -1619,20 +1135,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_curweek = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -1678,7 +1180,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_curweek")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_curweek", "impact_curweek","commentsprtweet_curweek","retweets_curweek"))
       )
     )
@@ -1826,20 +1327,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_lastweek = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -1885,7 +1372,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_lastweek")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_lastweek", "impact_lastweek","commentsprtweet_lastweek","retweets_lastweek"))
       )
     )
@@ -2033,20 +1519,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_curmonth = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -2092,7 +1564,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_curmonth")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_curmonth", "impact_curmonth","commentsprtweet_curmonth","retweets_curmonth"))
       )
     )
@@ -2240,20 +1711,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_lastmonth = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -2299,7 +1756,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_lastmonth")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_lastmonth", "impact_lastmonth","commentsprtweet_lastmonth","retweets_lastmonth"))
       )
     )
@@ -2447,20 +1903,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_curyear = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -2506,7 +1948,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_curyear")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_curyear", "impact_curyear","commentsprtweet_curyear","retweets_curyear"))
       )
     )
@@ -2654,20 +2095,6 @@ server <- shinyServer(function(input, output, session) {
             if (value == 1) emo::ji("1st_place_medal") else if (value == 2) emo::ji("2nd_place_medal") else if (value == 3) emo::ji("3rd_place_medal") else value
           }
         ),
-        affiliation  = colDef(
-          name = paste(emo::ji("office"),"", sep = " "),
-          align = "center",
-          minWidth = 80,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
-        party  = colDef(
-          name = paste(emo::ji("abc"),"", sep = " "),
-          align = "center",
-          minWidth = 40,
-          style = list(position = "sticky", left = 0, background = "#fff", zIndex = 1),
-          headerStyle = list(position = "sticky", left = 0, background = "#fff", zIndex = 1)
-        ),
         likes_lastyear = colDef(
           name = paste(emo::ji("heart"),"Likes", sep = " "),
           align = "center",
@@ -2713,7 +2140,6 @@ server <- shinyServer(function(input, output, session) {
       ),
       columnGroups = list(
         colGroup(name = "Politiker", columns = c("name", "profile_image_url", "followers_lastyear")),
-        colGroup(name = "Parti", columns = c("affiliation", "party")),
         colGroup(name = "Scoreboard", columns = c("placering", "likes_lastyear", "impact_lastyear","commentsprtweet_lastyear","retweets_lastyear"))
       )
     )
@@ -2816,5 +2242,5 @@ server <- shinyServer(function(input, output, session) {
 
 
 # Run the application
-shinyApp(ui = ui, server = server)
-#auth0::shinyAppAuth0(ui, server)
+#shinyApp(ui = ui, server = server)
+auth0::shinyAppAuth0(ui, server)

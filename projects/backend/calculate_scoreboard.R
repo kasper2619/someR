@@ -95,6 +95,8 @@ dat %>% dplyr::select(
   author_id,
   username,
   name,
+  affiliation,
+  party,
   list,
   profile_image_url,
   affiliation,
@@ -156,7 +158,7 @@ dat %>% dplyr::mutate(
   date = as.Date(created_at),
   year = lubridate::year(created_at),
   month = lubridate::month(created_at, label = T),
-  week = lubridate::week(created_at),
+  week = lubridate::epiweek(date+1),
   wday = lubridate::wday(created_at, label = T),
   hour = lubridate::hour(created_at)
 ) -> dat
@@ -436,6 +438,8 @@ dat_t %>% dplyr::select(
   username,
   name,
   profile_image_url,
+  affiliation,
+  party,
   list
 ) -> dat_t
 
@@ -485,7 +489,7 @@ dat_t <- dplyr::left_join(
 dat_out <- reshape2::melt(
   dat_t,
   id.vars = c(
-    "username", "name","profile_image_url","list"
+    "username", "name","profile_image_url","affiliation", "party","list"
   )
 )
 
